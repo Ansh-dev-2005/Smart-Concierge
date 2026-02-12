@@ -1,204 +1,345 @@
-# Requirements Document: Smart Concierge
+# Requirements Document: Smart Concierge - Learning Acceleration & Technical Copilot
 
 ## Introduction
 
-The Smart Concierge feature enhances the Campus Resource Management system by providing an intelligent, conversational interface that understands user intent from natural language queries and guides users through common workflows. The feature analyzes user context, suggests relevant next steps, and provides intelligent shortcuts for tasks like booking mentors, tracking submissions, finding lab availability, and checking approval status. It works seamlessly across both kiosk (touch/voice) and web interfaces, learning from user patterns to improve suggestions over time.
+The Smart Concierge is an AI-powered learning acceleration and technical copilot system designed to help students and developers learn faster, work smarter, and become more productive while building and understanding technology. The system provides personalized learning paths, real-time technical assistance, code explanations, project guidance, and intelligent mentorship matching—all through natural conversation. It transforms the campus resource management system into an intelligent learning companion that accelerates skill development and project success.
+
+## Core Problem Statement
+
+Students and developers face significant challenges in their learning journey:
+- **Information Overload**: Too many resources, unclear learning paths
+- **Slow Learning Curve**: Trial-and-error approach wastes time
+- **Lack of Context**: Generic tutorials don't match their specific project needs
+- **Limited Mentorship**: Can't get help when stuck on technical problems
+- **Knowledge Gaps**: Don't know what they don't know
+- **Productivity Barriers**: Spend more time searching than building
+
+## Solution Overview
+
+Smart Concierge accelerates learning and productivity through:
+1. **Personalized Learning Paths**: AI-curated roadmaps based on project goals and skill level
+2. **Real-Time Technical Copilot**: Instant help with code, debugging, and architecture decisions
+3. **Contextual Knowledge Delivery**: Just-in-time learning matched to current tasks
+4. **Intelligent Mentorship**: Smart matching and session optimization
+5. **Project-Based Learning**: Learn by building with guided assistance
+6. **Skill Gap Analysis**: Identify and fill knowledge gaps proactively
 
 ## Glossary
 
-- **Smart_Concierge**: The intelligent assistant system that analyzes user intent and provides contextual guidance
-- **Intent_Analyzer**: Component that classifies user queries into actionable intents
-- **Context_Engine**: Component that maintains and analyzes user state, history, and current goals
-- **Suggestion_Engine**: Component that generates personalized next-step recommendations
-- **Workflow_Orchestrator**: Component that guides users through multi-step processes
-- **Learning_Module**: Component that improves suggestions based on user interaction patterns
-- **User_Context**: Current state including active projects, pending tasks, recent actions, and user role
-- **Intent**: Classified user goal (e.g., book_mentor, track_submission, find_resources, check_approval)
-- **Workflow**: Multi-step process with defined stages (e.g., mentor booking: search → select → schedule → confirm)
-- **Suggestion**: Contextual recommendation for next action based on user state
-- **Confidence_Score**: Numerical measure (0-1) of intent classification certainty
-- **User_Pattern**: Historical behavior data used for personalization
-- **RAG_System**: Retrieval-Augmented Generation system for context-aware responses
-- **Agent_Worker**: Background processing unit for asynchronous AI tasks
+- **Smart_Concierge**: AI-powered learning acceleration and technical copilot system
+- **Learning_Path_Engine**: Generates personalized learning roadmaps based on goals and skill level
+- **Technical_Copilot**: Real-time assistant for code help, debugging, and technical decisions
+- **Knowledge_Graph**: Interconnected map of concepts, technologies, and learning resources
+- **Skill_Analyzer**: Assesses current skill level and identifies gaps
+- **Context_Engine**: Understands user's current project, goals, and learning context
+- **Mentor_Matcher**: Intelligently matches students with mentors based on needs and expertise
+- **Learning_Session**: Interactive learning experience with explanations, examples, and practice
+- **Code_Explainer**: Breaks down complex code into understandable explanations
+- **Project_Guide**: Provides step-by-step guidance for building projects
+- **Resource_Curator**: Finds and ranks the best learning resources for specific topics
+- **Progress_Tracker**: Monitors learning progress and skill development
+- **Challenge_Generator**: Creates practice problems matched to skill level
+- **Concept_Mapper**: Visualizes relationships between technologies and concepts
 
 ## Requirements
 
-### Requirement 1: Intent Analysis
+### Requirement 1: Personalized Learning Path Generation
 
-**User Story:** As a user, I want the system to understand my natural language queries, so that I can interact conversationally without learning specific commands.
-
-#### Acceptance Criteria
-
-1. WHEN a user submits a text or voice query, THE Intent_Analyzer SHALL classify the query into one of the supported intent categories within 2 seconds
-2. WHEN the Intent_Analyzer processes a query, THE System SHALL return a Confidence_Score between 0 and 1
-3. IF the Confidence_Score is below 0.7, THEN THE Smart_Concierge SHALL request clarification from the user
-4. THE Intent_Analyzer SHALL support at least the following intent categories: book_mentor, track_submission, find_resources, check_approval, reserve_equipment, submit_purchase, view_inventory, get_help
-5. WHEN a query contains multiple intents, THE Intent_Analyzer SHALL identify the primary intent and flag secondary intents
-6. THE Intent_Analyzer SHALL extract relevant entities from queries (e.g., mentor names, resource types, project IDs, date ranges)
-7. WHEN processing voice input, THE System SHALL integrate with the existing voice-agent STT service
-8. THE Intent_Analyzer SHALL achieve at least 85% accuracy on intent classification
-
-### Requirement 2: Context-Aware Suggestions
-
-**User Story:** As a user, I want to receive personalized suggestions based on my current state and goals, so that I can efficiently complete my tasks.
+**User Story:** As a student, I want AI-generated learning paths tailored to my project goals and current skill level, so that I can learn efficiently without wasting time on irrelevant content.
 
 #### Acceptance Criteria
 
-1. WHEN a user interacts with the Smart_Concierge, THE Context_Engine SHALL retrieve the User_Context including active projects, pending tasks, recent actions, and user role
-2. WHEN generating suggestions, THE Suggestion_Engine SHALL consider the User_Context to provide relevant recommendations
-3. THE Suggestion_Engine SHALL return between 3 and 5 contextual suggestions per interaction
-4. WHEN a user has pending approvals, THE Suggestion_Engine SHALL prioritize approval-related suggestions
-5. WHEN a user has missing resources for a project, THE Suggestion_Engine SHALL suggest purchase request or alternative resource workflows
-6. WHEN a user has no recent activity on a project, THE Suggestion_Engine SHALL suggest progress updates or mentor consultations
-7. THE Suggestion_Engine SHALL rank suggestions by relevance score (0-1) based on User_Context
-8. WHEN a user completes a workflow step, THE System SHALL update suggestions to reflect the new state
+1. WHEN a user describes their learning goal (e.g., "build an IoT weather station"), THE Learning_Path_Engine SHALL generate a personalized roadmap with topics, resources, and milestones
+2. THE Learning_Path_Engine SHALL assess the user's current skill level through conversation or skill assessment
+3. THE generated learning path SHALL include: prerequisite concepts, core topics, hands-on projects, estimated time, and difficulty progression
+4. WHEN generating paths, THE System SHALL consider the user's active project context and suggest relevant learning
+5. THE Learning_Path_Engine SHALL break down complex topics into digestible learning sessions (15-30 minutes each)
+6. THE System SHALL provide multiple learning modalities: tutorials, videos, documentation, interactive exercises, and mentor sessions
+7. WHEN a user completes a learning milestone, THE System SHALL update the path and suggest next steps
+8. THE Learning_Path_Engine SHALL adapt paths based on user progress, struggles, and feedback
 
-### Requirement 3: Workflow Orchestration
+### Requirement 2: Real-Time Technical Copilot
 
-**User Story:** As a user, I want guided assistance through common workflows, so that I can complete complex tasks without confusion.
-
-#### Acceptance Criteria
-
-1. THE Workflow_Orchestrator SHALL support guided workflows for: mentor booking, project submission, resource reservation, purchase request, and approval tracking
-2. WHEN a user initiates a workflow, THE Workflow_Orchestrator SHALL present the current step and available actions
-3. WHEN a user completes a workflow step, THE System SHALL automatically advance to the next step
-4. WHEN a workflow requires data input, THE System SHALL validate inputs before proceeding
-5. IF a workflow step fails, THEN THE Workflow_Orchestrator SHALL provide error details and recovery options
-6. THE Workflow_Orchestrator SHALL allow users to pause and resume workflows across sessions
-7. WHEN a workflow is paused, THE System SHALL persist the workflow state in the User_Context
-8. THE Workflow_Orchestrator SHALL provide progress indicators showing completed and remaining steps
-
-### Requirement 4: Mentor Booking Workflow
-
-**User Story:** As a student, I want to book mentor sessions through natural conversation, so that I can quickly schedule guidance without navigating multiple pages.
+**User Story:** As a developer, I want instant technical assistance while coding, so that I can solve problems quickly and learn best practices in context.
 
 #### Acceptance Criteria
 
-1. WHEN a user requests "book a mentor", THE Smart_Concierge SHALL retrieve available mentors from the existing mentors API
-2. THE System SHALL display mentor information including name, expertise areas, and availability status
-3. WHEN a user selects a mentor, THE System SHALL guide them through scheduling (date, time, topic selection)
-4. THE System SHALL validate mentor availability before confirming bookings
-5. WHEN a booking is confirmed, THE System SHALL create the appointment via the existing projects API (assign mentor endpoint)
-6. THE System SHALL send notifications to both student and mentor upon successful booking
-7. IF no mentors are available, THEN THE System SHALL suggest alternative time slots or mentors
-8. THE System SHALL allow users to search mentors by expertise area or name
+1. WHEN a user asks a technical question, THE Technical_Copilot SHALL provide contextual answers within 2 seconds
+2. THE Technical_Copilot SHALL support queries about: code debugging, architecture decisions, library selection, best practices, and optimization
+3. WHEN a user shares code, THE Code_Explainer SHALL break it down line-by-line with explanations
+4. THE Technical_Copilot SHALL suggest improvements, identify bugs, and explain why changes are needed
+5. WHEN explaining concepts, THE System SHALL use analogies, diagrams, and examples relevant to the user's project
+6. THE Technical_Copilot SHALL provide multiple solution approaches with trade-offs explained
+7. WHEN a user is stuck, THE System SHALL ask clarifying questions to understand the problem better
+8. THE Technical_Copilot SHALL reference official documentation and provide links to deep-dive resources
 
-### Requirement 5: Submission Tracking Workflow
+### Requirement 3: Contextual Knowledge Delivery
 
-**User Story:** As a user, I want to track my project submission status through simple queries, so that I can stay informed about progress without manual checking.
-
-#### Acceptance Criteria
-
-1. WHEN a user requests "track my submission" or "check project status", THE Smart_Concierge SHALL retrieve project data from the projects API
-2. THE System SHALL display project status, approval state, pending tasks, and recent activity
-3. WHEN a project has pending approvals, THE System SHALL show estimated approval timeline based on historical data
-4. THE System SHALL suggest relevant next actions based on project status (e.g., "Add progress update", "Reserve equipment")
-5. WHEN a project status changes, THE System SHALL proactively notify the user through the notification service
-6. THE System SHALL allow users to filter projects by status (active, pending, approved, completed)
-7. WHEN displaying project details, THE System SHALL include feasibility score, estimated cost, and resource status
-8. THE System SHALL provide quick actions for common tasks (add log entry, create task, view timeline)
-
-### Requirement 6: Resource Discovery Workflow
-
-**User Story:** As a user, I want to find lab availability and equipment through natural queries, so that I can quickly locate resources without browsing inventory lists.
+**User Story:** As a learner, I want to receive relevant knowledge exactly when I need it, so that I can learn in context rather than through disconnected tutorials.
 
 #### Acceptance Criteria
 
-1. WHEN a user requests "find lab availability" or "check equipment", THE Smart_Concierge SHALL query the inventory API
-2. THE System SHALL display available resources with quantities, locations, and reservation status
-3. WHEN a user specifies resource requirements, THE System SHALL filter inventory by item type, quantity, and availability
-4. THE System SHALL suggest alternative resources when requested items are unavailable
-5. WHEN displaying resources, THE System SHALL show current reservations and next available time slots
-6. THE System SHALL provide quick actions to reserve equipment or submit purchase requests
-7. WHEN a resource becomes available, THE System SHALL notify users who previously searched for that resource
-8. THE System SHALL integrate with the existing RAG system to answer resource-related questions
+1. WHEN a user is working on a specific project phase, THE Context_Engine SHALL proactively suggest relevant learning resources
+2. THE System SHALL analyze the user's current task and provide just-in-time knowledge snippets
+3. WHEN a user encounters a new technology in their project, THE System SHALL offer a quick primer with "learn more" options
+4. THE Knowledge_Graph SHALL connect related concepts and suggest prerequisite learning when needed
+5. THE System SHALL provide progressive disclosure: brief explanations first, with options to dive deeper
+6. WHEN a user asks "why" or "how does this work", THE System SHALL provide layered explanations from basic to advanced
+7. THE Context_Engine SHALL remember what the user has already learned to avoid repetition
+8. THE System SHALL surface relevant examples from similar projects in the knowledge base
 
-### Requirement 7: Approval Status Workflow
+### Requirement 4: Intelligent Code Explanation & Debugging
 
-**User Story:** As a user, I want to check approval status and timelines through conversational queries, so that I can plan my work accordingly.
-
-#### Acceptance Criteria
-
-1. WHEN a user requests "check approval status", THE Smart_Concierge SHALL retrieve approval data from the approvals API
-2. THE System SHALL display pending approvals with submission date, current stage, and assigned approver
-3. THE System SHALL calculate estimated approval timeline based on historical approval durations
-4. WHEN an approval decision is made, THE System SHALL notify the user immediately via the notification service
-5. THE System SHALL show approval history and decision rationale when available
-6. FOR HOD users, THE System SHALL prioritize pending approvals requiring their action
-7. THE System SHALL suggest actions to expedite approvals (e.g., "Add clarification", "Contact HOD")
-8. THE System SHALL display approval bottlenecks and suggest mitigation strategies
-
-### Requirement 8: Cross-Platform Integration
-
-**User Story:** As a user, I want consistent Smart Concierge experience across web and kiosk interfaces, so that I can use any available device seamlessly.
+**User Story:** As a student, I want to understand how code works and why it's not working, so that I can learn from my mistakes and improve my skills.
 
 #### Acceptance Criteria
 
-1. THE Smart_Concierge SHALL provide identical functionality on web (Next.js) and kiosk (Electron) interfaces
-2. WHEN using the kiosk, THE System SHALL support both touch and voice input modes
-3. THE System SHALL integrate with the existing voice-agent service for voice interactions on kiosk
-4. WHEN switching between devices, THE System SHALL maintain User_Context and workflow state
-5. THE System SHALL adapt UI presentation for touch (larger buttons, simplified layout) versus web (detailed views)
-6. THE System SHALL use the existing authentication system to maintain user sessions across platforms
-7. WHEN voice input is used, THE System SHALL display transcriptions for user confirmation
-8. THE System SHALL provide visual feedback for voice processing states (listening, processing, responding)
+1. WHEN a user pastes code, THE Code_Explainer SHALL provide a structured breakdown: purpose, logic flow, key concepts, and potential issues
+2. THE System SHALL identify common mistakes and anti-patterns with explanations of why they're problematic
+3. WHEN debugging, THE Technical_Copilot SHALL guide users through systematic problem-solving rather than just giving answers
+4. THE System SHALL explain error messages in plain language and suggest fixes with reasoning
+5. WHEN showing solutions, THE System SHALL explain the thought process and decision-making
+6. THE Code_Explainer SHALL highlight learning opportunities: "This is a good place to learn about [concept]"
+7. THE System SHALL compare different implementation approaches and explain trade-offs
+8. WHEN appropriate, THE System SHALL generate visual diagrams (flowcharts, architecture diagrams) to aid understanding
 
-### Requirement 9: Learning and Personalization
+### Requirement 5: Project-Based Learning Guidance
 
-**User Story:** As a user, I want the system to learn from my patterns and improve suggestions over time, so that I receive increasingly relevant recommendations.
-
-#### Acceptance Criteria
-
-1. THE Learning_Module SHALL track user interaction patterns including query types, workflow completions, and suggestion selections
-2. THE System SHALL store User_Patterns in the database for persistence across sessions
-3. WHEN generating suggestions, THE Suggestion_Engine SHALL weight recommendations based on User_Patterns
-4. THE Learning_Module SHALL identify frequently used workflows and create personalized shortcuts
-5. THE System SHALL adapt suggestion ranking based on user feedback (implicit through selections, explicit through ratings)
-6. THE Learning_Module SHALL detect workflow abandonment patterns and suggest improvements
-7. THE System SHALL respect user privacy by anonymizing pattern data for system-wide improvements
-8. THE Learning_Module SHALL update User_Patterns asynchronously without blocking user interactions
-
-### Requirement 10: Integration with Existing Agent Service
-
-**User Story:** As a system architect, I want the Smart Concierge to leverage existing AI infrastructure, so that we maintain consistency and avoid duplication.
+**User Story:** As a student, I want step-by-step guidance while building my project, so that I can learn by doing with expert support.
 
 #### Acceptance Criteria
 
-1. THE Smart_Concierge SHALL use the existing IntentService for intent classification
-2. THE System SHALL use the existing MemoryService for conversation history management
-3. THE Smart_Concierge SHALL integrate with the existing RAG_System for knowledge retrieval
-4. THE System SHALL use existing Agent_Workers for asynchronous AI processing tasks
-5. THE Smart_Concierge SHALL extend the existing agent.controller.ts with new concierge endpoints
-6. THE System SHALL reuse existing AI provider infrastructure (OpenAI, Ollama, Stub modes)
-7. THE Smart_Concierge SHALL use the existing LLMService for text generation
-8. THE System SHALL maintain backward compatibility with existing agent endpoints (/recommend, /chat, /answer)
+1. WHEN a user starts a project, THE Project_Guide SHALL break it down into phases with clear objectives
+2. THE System SHALL provide a "next best step" recommendation based on current progress
+3. WHEN a user completes a project phase, THE System SHALL review their work and provide constructive feedback
+4. THE Project_Guide SHALL suggest relevant technologies and explain why they're appropriate for the project
+5. THE System SHALL identify potential challenges ahead and provide preemptive learning resources
+6. WHEN a user deviates from best practices, THE System SHALL explain the implications and suggest alternatives
+7. THE Project_Guide SHALL connect project tasks to learning objectives: "By building this, you'll learn [concepts]"
+8. THE System SHALL celebrate milestones and visualize project progress
 
-### Requirement 11: Performance and Scalability
+### Requirement 6: Skill Gap Analysis & Recommendations
 
-**User Story:** As a system administrator, I want the Smart Concierge to perform efficiently under load, so that user experience remains responsive.
-
-#### Acceptance Criteria
-
-1. THE Intent_Analyzer SHALL process queries and return classifications within 2 seconds for 95% of requests
-2. THE Suggestion_Engine SHALL generate contextual suggestions within 1 second
-3. THE System SHALL support at least 100 concurrent users without performance degradation
-4. THE Smart_Concierge SHALL use caching for frequently accessed data (user context, inventory, mentor availability)
-5. THE System SHALL implement rate limiting to prevent abuse (max 60 requests per minute per user)
-6. THE Learning_Module SHALL process pattern updates asynchronously without blocking user requests
-7. THE System SHALL use database connection pooling for efficient resource utilization
-8. THE Smart_Concierge SHALL implement circuit breakers for external service calls (voice-agent, AI providers)
-
-### Requirement 12: Error Handling and Resilience
-
-**User Story:** As a user, I want the system to handle errors gracefully and provide helpful recovery options, so that I can complete my tasks even when issues occur.
+**User Story:** As a learner, I want to understand my knowledge gaps and get recommendations to fill them, so that I can focus my learning efforts effectively.
 
 #### Acceptance Criteria
 
-1. WHEN an external service is unavailable, THE Smart_Concierge SHALL provide degraded functionality with clear user communication
-2. IF the Intent_Analyzer fails, THEN THE System SHALL fall back to keyword-based intent detection
-3. WHEN the AI provider is unavailable, THE System SHALL use rule-based responses for common queries
-4. THE System SHALL log all errors with context for debugging and monitoring
-5. WHEN a workflow step fails, THE System SHALL preserve user progress and allow retry
-6. THE Smart_Concierge SHALL validate all user inputs and provide specific error messages for invalid data
-7. THE System SHALL implement timeout handling for long-running operations (max 30 seconds)
+1. THE Skill_Analyzer SHALL assess the user's skill level through conversation, project analysis, and optional quizzes
+2. WHEN analyzing skills, THE System SHALL identify: mastered concepts, partial knowledge, and gaps
+3. THE System SHALL generate a visual skill map showing strengths and areas for improvement
+4. WHEN gaps are identified, THE System SHALL prioritize them based on the user's goals and current projects
+5. THE Skill_Analyzer SHALL suggest targeted learning resources to fill specific gaps
+6. THE System SHALL track skill development over time and show progress
+7. WHEN a user struggles with a concept repeatedly, THE System SHALL recognize the pattern and offer deeper learning
+8. THE Skill_Analyzer SHALL recommend prerequisite learning when a user attempts advanced topics without foundations
+
+### Requirement 7: Intelligent Mentor Matching & Session Optimization
+
+**User Story:** As a student, I want to be matched with the right mentor for my specific needs and get the most value from mentorship sessions.
+
+#### Acceptance Criteria
+
+1. WHEN a user requests mentorship, THE Mentor_Matcher SHALL analyze their current challenge, skill level, and learning style
+2. THE System SHALL recommend mentors based on: expertise match, teaching style, availability, and past success with similar students
+3. BEFORE a mentor session, THE System SHALL generate a session brief: student's context, specific questions, and suggested topics
+4. THE Mentor_Matcher SHALL suggest optimal session timing based on the user's learning progress
+5. AFTER a session, THE System SHALL capture key learnings and integrate them into the user's learning path
+6. THE System SHALL identify when self-learning is sufficient vs. when mentorship is needed
+7. WHEN booking mentors, THE System SHALL prepare the student with prerequisite knowledge to maximize session value
+8. THE System SHALL track mentor effectiveness and student outcomes to improve matching
+
+### Requirement 8: Interactive Learning Sessions
+
+**User Story:** As a learner, I want interactive, engaging learning experiences that adapt to my pace and understanding.
+
+#### Acceptance Criteria
+
+1. THE System SHALL provide interactive learning sessions with explanations, code examples, and practice exercises
+2. WHEN teaching a concept, THE System SHALL check understanding through questions and exercises
+3. THE Learning_Session SHALL adapt difficulty based on user responses and comprehension
+4. THE System SHALL provide immediate feedback on practice exercises with explanations
+5. WHEN a user struggles, THE System SHALL offer alternative explanations, analogies, or simpler examples
+6. THE Learning_Session SHALL include hands-on coding challenges that can be completed in the interface
+7. THE System SHALL use spaced repetition to reinforce important concepts over time
+8. WHEN appropriate, THE System SHALL gamify learning with progress badges, streaks, and achievements
+
+### Requirement 9: Resource Curation & Recommendation
+
+**User Story:** As a learner, I want curated, high-quality learning resources matched to my needs, so that I don't waste time searching through irrelevant content.
+
+#### Acceptance Criteria
+
+1. THE Resource_Curator SHALL find and rank learning resources (tutorials, docs, videos, articles) based on quality and relevance
+2. WHEN recommending resources, THE System SHALL consider: user's skill level, learning style, time available, and current context
+3. THE System SHALL provide resource summaries: what you'll learn, difficulty level, time required, and prerequisites
+4. THE Resource_Curator SHALL prioritize official documentation, reputable sources, and recently updated content
+5. WHEN multiple resources cover the same topic, THE System SHALL explain which is best for the user's situation
+6. THE System SHALL integrate with the existing RAG system to search internal knowledge bases and past projects
+7. THE Resource_Curator SHALL track which resources users find helpful and improve recommendations
+8. THE System SHALL create custom learning playlists combining multiple resources for comprehensive learning
+
+### Requirement 10: Progress Tracking & Motivation
+
+**User Story:** As a learner, I want to see my progress and stay motivated throughout my learning journey.
+
+#### Acceptance Criteria
+
+1. THE Progress_Tracker SHALL visualize learning progress: concepts mastered, projects completed, skills developed
+2. THE System SHALL show learning streaks, time invested, and milestones achieved
+3. WHEN users reach milestones, THE System SHALL celebrate achievements and suggest next challenges
+4. THE Progress_Tracker SHALL compare current skills to learning goals and show the path forward
+5. THE System SHALL provide weekly learning summaries with highlights and recommendations
+6. WHEN progress stalls, THE System SHALL identify blockers and suggest interventions
+7. THE Progress_Tracker SHALL show how learning translates to project capabilities
+8. THE System SHALL enable users to share achievements and get recognition from peers and mentors
+
+### Requirement 11: Concept Mapping & Knowledge Visualization
+
+**User Story:** As a learner, I want to visualize how different technologies and concepts relate to each other, so that I can understand the bigger picture.
+
+#### Acceptance Criteria
+
+1. THE Concept_Mapper SHALL generate visual knowledge graphs showing relationships between technologies, concepts, and skills
+2. WHEN exploring a technology, THE System SHALL show: prerequisites, related concepts, use cases, and learning resources
+3. THE Knowledge_Graph SHALL highlight the user's current knowledge and suggest logical next steps
+4. THE System SHALL show technology stacks and how components fit together
+5. WHEN planning projects, THE Concept_Mapper SHALL visualize required technologies and their relationships
+6. THE System SHALL identify concept dependencies: "To learn X, you should first understand Y"
+7. THE Knowledge_Graph SHALL be interactive: click on concepts to learn more or start learning sessions
+8. THE System SHALL show multiple learning paths to reach a goal with different trade-offs
+
+### Requirement 12: Challenge Generation & Practice
+
+**User Story:** As a learner, I want practice challenges matched to my skill level, so that I can reinforce learning through hands-on experience.
+
+#### Acceptance Criteria
+
+1. THE Challenge_Generator SHALL create coding challenges based on the user's current learning topics
+2. THE System SHALL adjust challenge difficulty based on user performance and skill level
+3. WHEN users complete challenges, THE System SHALL provide detailed feedback and alternative solutions
+4. THE Challenge_Generator SHALL create project-relevant challenges that apply to the user's current work
+5. THE System SHALL offer hints and progressive guidance when users are stuck
+6. THE Challenge_Generator SHALL include real-world scenarios and practical problems
+7. THE System SHALL track challenge completion and identify areas needing more practice
+8. WHEN appropriate, THE System SHALL suggest collaborative challenges with peers
+
+### Requirement 13: Voice & Multimodal Learning
+
+**User Story:** As a learner, I want to interact through voice and see visual explanations, so that I can learn in the way that works best for me.
+
+#### Acceptance Criteria
+
+1. THE System SHALL support voice queries for hands-free learning while coding
+2. WHEN explaining concepts, THE System SHALL generate diagrams, flowcharts, and visual aids
+3. THE System SHALL support code visualization: execution flow, data structures, algorithm animations
+4. WHEN using kiosks, THE System SHALL provide voice-guided tutorials and explanations
+5. THE System SHALL offer text, audio, and visual explanations for different learning preferences
+6. THE System SHALL integrate with the existing voice-agent service for speech-to-text and text-to-speech
+7. WHEN showing code, THE System SHALL highlight important sections and provide inline annotations
+8. THE System SHALL support screen sharing for collaborative debugging and learning
+
+### Requirement 14: Collaborative Learning Features
+
+**User Story:** As a learner, I want to learn with peers and share knowledge, so that I can benefit from collaborative learning.
+
+#### Acceptance Criteria
+
+1. THE System SHALL identify peers working on similar projects or learning similar topics
+2. WHEN appropriate, THE System SHALL suggest study groups or pair programming sessions
+3. THE System SHALL facilitate knowledge sharing: users can share solutions, explanations, and resources
+4. WHEN a user solves a problem, THE System SHALL suggest documenting it to help future learners
+5. THE System SHALL enable peer code reviews with guided feedback prompts
+6. THE System SHALL create learning challenges that teams can solve together
+7. WHEN multiple users ask similar questions, THE System SHALL create group learning sessions
+8. THE System SHALL recognize and reward users who help others learn
+
+### Requirement 15: Integration with Development Workflow
+
+**User Story:** As a developer, I want learning assistance integrated into my development workflow, so that I can learn without context switching.
+
+#### Acceptance Criteria
+
+1. THE System SHALL integrate with the existing project management and code repository systems
+2. WHEN users commit code, THE System SHALL offer optional code reviews with learning feedback
+3. THE System SHALL analyze project repositories to understand tech stack and suggest relevant learning
+4. WHEN users create tasks, THE System SHALL identify required skills and offer learning resources
+5. THE System SHALL provide IDE-like features: code completion suggestions with explanations
+6. THE System SHALL track which technologies users are actively using and prioritize related learning
+7. WHEN users encounter errors in their projects, THE System SHALL proactively offer debugging help
+8. THE System SHALL integrate learning progress with project milestones
+
+### Requirement 16: Adaptive Learning Intelligence
+
+**User Story:** As a learner, I want the system to adapt to my learning style and pace, so that I get a personalized experience.
+
+#### Acceptance Criteria
+
+1. THE System SHALL learn from user interactions: preferred explanation styles, learning pace, and comprehension patterns
+2. WHEN users skip or skim content, THE System SHALL adjust future explanations to be more concise
+3. WHEN users request more details, THE System SHALL provide deeper explanations in future interactions
+4. THE System SHALL identify optimal learning times based on user engagement patterns
+5. THE System SHALL adapt to learning preferences: visual vs. text, theory vs. practice, guided vs. exploratory
+6. WHEN users consistently struggle with certain types of explanations, THE System SHALL try alternative approaches
+7. THE System SHALL balance challenge and support to maintain optimal learning flow
+8. THE System SHALL use reinforcement learning to improve teaching effectiveness over time
+
+### Requirement 17: Workflow Automation (Secondary Feature)
+
+**User Story:** As a user, I want automated assistance with administrative tasks, so that I can focus more time on learning and building.
+
+#### Acceptance Criteria
+
+1. THE System SHALL provide quick workflows for: mentor booking, resource reservation, submission tracking, approval status
+2. WHEN users need administrative help, THE System SHALL handle it efficiently without disrupting learning flow
+3. THE System SHALL proactively notify users of pending approvals, deadlines, and administrative tasks
+4. THE Workflow_Orchestrator SHALL guide users through multi-step administrative processes
+5. THE System SHALL prioritize learning-related workflows over purely administrative ones
+6. WHEN booking mentors, THE System SHALL focus on learning objectives rather than just scheduling
+7. THE System SHALL automate repetitive administrative tasks to save time for learning
+8. THE System SHALL integrate administrative context into learning recommendations
+
+### Requirement 18: Performance & Scalability
+
+**User Story:** As a system administrator, I want the Smart Concierge to perform efficiently under load, so that learning experiences remain responsive.
+
+#### Acceptance Criteria
+
+1. THE Technical_Copilot SHALL respond to queries within 2 seconds for 95% of requests
+2. THE Learning_Path_Engine SHALL generate personalized paths within 5 seconds
+3. THE System SHALL support at least 100 concurrent learning sessions without performance degradation
+4. THE System SHALL use caching for frequently accessed learning resources and explanations
+5. THE System SHALL implement rate limiting to ensure fair resource allocation
+6. THE Learning modules SHALL process updates asynchronously without blocking user interactions
+7. THE System SHALL use database connection pooling and query optimization
+8. THE System SHALL implement circuit breakers for external AI services with graceful degradation
+
+### Requirement 19: Error Handling & Learning Continuity
+
+**User Story:** As a learner, I want the system to handle errors gracefully and maintain my learning progress, so that technical issues don't disrupt my learning journey.
+
+#### Acceptance Criteria
+
+1. WHEN external services are unavailable, THE System SHALL provide degraded functionality with clear communication
+2. IF the AI provider fails, THE System SHALL fall back to cached explanations and rule-based responses
+3. WHEN errors occur, THE System SHALL preserve user progress and learning state
+4. THE System SHALL log all errors with context for debugging and improvement
+5. WHEN learning sessions are interrupted, THE System SHALL allow seamless resumption
+6. THE System SHALL validate all user inputs and provide helpful error messages
+7. THE System SHALL implement timeout handling for long-running operations
 8. WHEN voice recognition fails, THE System SHALL prompt users to retry or switch to text input
+
+### Requirement 20: Privacy & Ethical AI
+
+**User Story:** As a learner, I want my learning data to be private and the AI to provide unbiased, ethical guidance.
+
+#### Acceptance Criteria
+
+1. THE System SHALL store learning progress and interactions securely with encryption
+2. THE System SHALL anonymize data used for system-wide improvements
+3. THE System SHALL provide transparency: explain why certain resources or paths are recommended
+4. THE System SHALL avoid bias in mentor matching, resource recommendations, and skill assessments
+5. THE System SHALL respect user privacy: no sharing of learning struggles or progress without consent
+6. THE System SHALL provide users control over their data: view, export, and delete
+7. THE System SHALL cite sources and acknowledge when information might be incomplete or uncertain
+8. THE System SHALL promote inclusive learning: accommodate different backgrounds, learning styles, and accessibility needs
+

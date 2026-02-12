@@ -1,18 +1,21 @@
-# Design Document: Smart Concierge
+# Design Document: Smart Concierge - Learning Acceleration & Technical Copilot
 
 ## Overview
 
-The Smart Concierge feature adds an intelligent conversational interface to the Campus Resource Management system, enabling users to interact naturally through text or voice across web and kiosk platforms. The system analyzes user intent, maintains contextual awareness, and guides users through common workflows like mentor booking, submission tracking, resource discovery, and approval monitoring.
+The Smart Concierge is an AI-powered learning acceleration and technical copilot system that helps students and developers learn faster, work smarter, and become more productive while building and understanding technology. The system provides personalized learning paths, real-time technical assistance, intelligent code explanations, project-based guidance, and adaptive mentorship—all through natural conversation across web and kiosk platforms.
 
-The design leverages existing infrastructure including the NestJS agent service (IntentService, MemoryService, RAG), voice-agent microservice (STT/TTS), and Prisma database schema. The Smart Concierge extends the current agent capabilities with enhanced intent classification, workflow orchestration, personalized suggestions, and cross-platform integration.
+Unlike traditional campus management systems that focus on administrative workflows, Smart Concierge prioritizes learning acceleration and technical productivity. Administrative features (mentor booking, resource management, approvals) are streamlined as secondary workflows that support the primary learning mission.
 
 ### Key Design Principles
 
-1. **Leverage Existing Infrastructure**: Reuse IntentService, MemoryService, RAG, and voice-agent rather than rebuilding
-2. **Minimal Schema Changes**: Extend existing models with optional fields rather than creating new tables
-3. **Backward Compatibility**: Maintain existing agent endpoints (/recommend, /chat, /answer) without breaking changes
-4. **Stateless Design**: Store all state in database/Redis for horizontal scalability
-5. **Progressive Enhancement**: Provide degraded functionality when AI services are unavailable
+1. **Learning-First Architecture**: Every feature optimized for knowledge acquisition and skill development
+2. **Contextual Intelligence**: Understand what the user is building and provide relevant, just-in-time learning
+3. **Progressive Disclosure**: Start simple, go deep on demand—match explanation depth to user needs
+4. **Learn by Doing**: Emphasize project-based learning with hands-on guidance
+5. **Adaptive Teaching**: Personalize explanations, pace, and difficulty to individual learning styles
+6. **Leverage Existing Infrastructure**: Reuse IntentService, MemoryService, RAG, and voice-agent
+7. **Minimal Schema Changes**: Extend existing models rather than rebuilding
+8. **Stateless Design**: Store all state in database/Redis for horizontal scalability
 
 ## Architecture
 
@@ -21,51 +24,49 @@ The design leverages existing infrastructure including the NestJS agent service 
 ```mermaid
 graph TB
     subgraph "Frontend Layer"
-        Web[Next.js Web App]
-        Kiosk[Electron Kiosk App]
+        Web[Next.js Web App<br/>Learning Interface]
+        Kiosk[Electron Kiosk App<br/>Voice Learning]
     end
     
     subgraph "Backend Layer"
         API[NestJS API Gateway]
         Concierge[Smart Concierge Service]
-        Agent[Existing Agent Service]
-        Auth[Auth Module]
+        Learning[Learning Engine]
+        Copilot[Technical Copilot]
     end
     
     subgraph "AI Layer"
-        Voice[Voice Agent<br/>Python/FastAPI]
-        Intent[Intent Analyzer]
-        RAG[RAG System]
-        LLM[LLM Service<br/>OpenAI/Ollama]
+        Voice[Voice Agent<br/>STT/TTS]
+        LLM[LLM Service<br/>GPT-4/Ollama]
+        RAG[RAG System<br/>Knowledge Base]
+        CodeAnalyzer[Code Analyzer]
     end
     
     subgraph "Data Layer"
         DB[(PostgreSQL<br/>+ pgvector)]
-        Redis[(Redis<br/>Memory Store)]
+        Redis[(Redis<br/>Cache)]
+        KnowledgeGraph[(Knowledge Graph)]
     end
     
     Web -->|REST/SSE| API
-    Kiosk -->|REST/SSE| API
-    Kiosk -.->|Voice| Voice
+    Kiosk -->|REST/SSE + Voice| API
     
     API --> Concierge
-    API --> Agent
-    API --> Auth
+    Concierge --> Learning
+    Concierge --> Copilot
     
-    Concierge --> Intent
-    Concierge --> RAG
-    Concierge --> Agent
+    Learning --> LLM
+    Learning --> RAG
+    Learning --> KnowledgeGraph
     
-    Intent --> LLM
-    RAG --> LLM
-    Agent --> LLM
+    Copilot --> LLM
+    Copilot --> CodeAnalyzer
+    Copilot --> RAG
     
-    Voice -->|Transcription| API
+    Voice --> API
     
     Concierge --> DB
     Concierge --> Redis
-    Agent --> DB
-    RAG --> DB
 ```
 
 ### Component Architecture
@@ -76,78 +77,112 @@ graph TB
         Controller[ConciergeController]
         Service[ConciergeService]
         
-        subgraph "Core Components"
-            IntentAnalyzer[IntentAnalyzer]
-            ContextEngine[ContextEngine]
-            SuggestionEngine[SuggestionEngine]
-            WorkflowOrchestrator[WorkflowOrchestrator]
-            LearningModule[LearningModule]
+        subgraph "Learning Components"
+            LearningPathEngine[LearningPathEngine]
+            SkillAnalyzer[SkillAnalyzer]
+            ResourceCurator[ResourceCurator]
+            ProgressTracker[ProgressTracker]
+            ConceptMapper[ConceptMapper]
+            ChallengeGenerator[ChallengeGenerator]
         end
         
-        subgraph "Workflow Handlers"
-            MentorWorkflow[MentorBookingWorkflow]
-            TrackingWorkflow[SubmissionTrackingWorkflow]
-            ResourceWorkflow[ResourceDiscoveryWorkflow]
-            ApprovalWorkflow[ApprovalStatusWorkflow]
+        subgraph "Technical Copilot Components"
+            TechnicalCopilot[TechnicalCopilot]
+            CodeExplainer[CodeExplainer]
+            ProjectGuide[ProjectGuide]
+            DebugAssistant[DebugAssistant]
+        end
+        
+        subgraph "Support Components"
+            ContextEngine[ContextEngine]
+            MentorMatcher[MentorMatcher]
+            WorkflowOrchestrator[WorkflowOrchestrator]
+            AdaptiveLearning[AdaptiveLearningModule]
         end
     end
     
     Controller --> Service
-    Service --> IntentAnalyzer
+    Service --> LearningPathEngine
+    Service --> TechnicalCopilot
     Service --> ContextEngine
-    Service --> SuggestionEngine
-    Service --> WorkflowOrchestrator
-    Service --> LearningModule
     
-    WorkflowOrchestrator --> MentorWorkflow
-    WorkflowOrchestrator --> TrackingWorkflow
-    WorkflowOrchestrator --> ResourceWorkflow
-    WorkflowOrchestrator --> ApprovalWorkflow
+    LearningPathEngine --> SkillAnalyzer
+    LearningPathEngine --> ResourceCurator
+    LearningPathEngine --> ConceptMapper
     
-    IntentAnalyzer -.->|uses| ExistingIntentService[Existing IntentService]
-    ContextEngine -.->|uses| ExistingMemoryService[Existing MemoryService]
-    SuggestionEngine -.->|uses| ExistingRAG[Existing RAG Service]
+    TechnicalCopilot --> CodeExplainer
+    TechnicalCopilot --> ProjectGuide
+    TechnicalCopilot --> DebugAssistant
+    
+    Service --> ProgressTracker
+    Service --> MentorMatcher
+    Service --> AdaptiveLearning
 ```
 
 ## Components and Interfaces
 
 ### 1. ConciergeController
 
-**Responsibility**: HTTP endpoint handling for Smart Concierge interactions
+**Responsibility**: HTTP endpoint handling for learning and technical assistance
 
 **Endpoints**:
 
 ```typescript
 @Controller('concierge')
 export class ConciergeController {
-  // Main interaction endpoint
+  // Main learning interaction
   @Post('query')
   async processQuery(@Body() dto: ConciergeQueryDto): Promise<ConciergeResponse>
   
-  // Get contextual suggestions
-  @Get('suggestions')
-  async getSuggestions(@Query('userId') userId: string): Promise<SuggestionResponse>
+  // Learning path generation
+  @Post('learning/path')
+  async generateLearningPath(@Body() dto: LearningGoalDto): Promise<LearningPath>
   
-  // Workflow management
-  @Post('workflow/start')
-  async startWorkflow(@Body() dto: StartWorkflowDto): Promise<WorkflowState>
+  @Get('learning/path/:userId')
+  async getLearningPath(@Param('userId') userId: string): Promise<LearningPath>
   
-  @Post('workflow/step')
-  async executeWorkflowStep(@Body() dto: WorkflowStepDto): Promise<WorkflowState>
+  @Post('learning/session')
+  async startLearningSession(@Body() dto: LearningSessionDto): Promise<LearningSession>
   
-  @Get('workflow/:workflowId')
-  async getWorkflowState(@Param('workflowId') id: string): Promise<WorkflowState>
+  // Technical copilot
+  @Post('copilot/explain')
+  async explainCode(@Body() dto: CodeExplanationDto): Promise<CodeExplanation>
   
-  @Delete('workflow/:workflowId')
-  async cancelWorkflow(@Param('workflowId') id: string): Promise<void>
+  @Post('copilot/debug')
+  async debugAssist(@Body() dto: DebugRequestDto): Promise<DebugSuggestion>
   
-  // Learning and feedback
-  @Post('feedback')
-  async submitFeedback(@Body() dto: FeedbackDto): Promise<void>
+  @Post('copilot/improve')
+  async suggestImprovements(@Body() dto: CodeImprovementDto): Promise<ImprovementSuggestion>
+  
+  // Skill assessment
+  @Get('skills/:userId')
+  async getSkillProfile(@Param('userId') userId: string): Promise<SkillProfile>
+  
+  @Post('skills/assess')
+  async assessSkills(@Body() dto: SkillAssessmentDto): Promise<SkillAssessment>
+  
+  // Resource recommendations
+  @Get('resources/recommend')
+  async recommendResources(@Query() query: ResourceQueryDto): Promise<Resource[]>
+  
+  // Progress tracking
+  @Get('progress/:userId')
+  async getProgress(@Param('userId') userId: string): Promise<LearningProgress>
+  
+  // Challenges
+  @Post('challenge/generate')
+  async generateChallenge(@Body() dto: ChallengeRequestDto): Promise<Challenge>
+  
+  @Post('challenge/submit')
+  async submitChallenge(@Body() dto: ChallengeSubmissionDto): Promise<ChallengeFeedback>
+  
+  // Mentor matching (secondary feature)
+  @Post('mentor/match')
+  async matchMentor(@Body() dto: MentorMatchDto): Promise<MentorRecommendation>
   
   // Voice integration
-  @Post('voice/process')
-  async processVoiceQuery(@Body() dto: VoiceQueryDto): Promise<ConciergeResponse>
+  @Post('voice/learn')
+  async voiceLearning(@Body() dto: VoiceLearningDto): Promise<ConciergeResponse>
 }
 ```
 
@@ -158,6 +193,7 @@ interface ConciergeQueryDto {
   query: string;
   userId: string;
   projectId?: string;
+  codeContext?: string;  // Current code user is working on
   platform: 'web' | 'kiosk';
   inputMode: 'text' | 'voice';
   sessionId?: string;
@@ -166,50 +202,85 @@ interface ConciergeQueryDto {
 interface ConciergeResponse {
   intent: IntentClassification;
   response: string;
+  explanation?: DetailedExplanation;
   suggestions: Suggestion[];
-  actions: QuickAction[];
-  workflowState?: WorkflowState;
+  learningOpportunities: LearningOpportunity[];
+  nextSteps: NextStep[];
+  visualAids?: VisualAid[];
   confidence: number;
 }
 
-interface IntentClassification {
-  type: string;
-  entities: Record<string, any>;
-  confidence: number;
-  needsClarification: boolean;
-  clarificationPrompt?: string;
+interface LearningGoalDto {
+  userId: string;
+  goal: string;  // e.g., "build an IoT weather station"
+  currentSkillLevel?: 'beginner' | 'intermediate' | 'advanced';
+  timeCommitment?: string;  // e.g., "2 hours/day"
+  preferredLearningStyle?: 'visual' | 'hands-on' | 'reading' | 'mixed';
 }
 
-interface Suggestion {
+interface LearningPath {
+  id: string;
+  goal: string;
+  phases: LearningPhase[];
+  estimatedDuration: string;
+  currentPhase: number;
+  progress: number;
+  skillsToAcquire: Skill[];
+  prerequisites: Concept[];
+}
+
+interface LearningPhase {
   id: string;
   title: string;
   description: string;
-  action: string;
-  relevanceScore: number;
-  category: 'workflow' | 'information' | 'action';
-}
-
-interface QuickAction {
-  id: string;
-  label: string;
-  type: 'navigate' | 'execute' | 'workflow';
-  payload: any;
-}
-
-interface WorkflowState {
-  workflowId: string;
-  type: string;
-  currentStep: number;
-  totalSteps: number;
-  stepData: any;
+  concepts: Concept[];
+  resources: Resource[];
+  projects: MiniProject[];
+  challenges: Challenge[];
+  estimatedTime: string;
   completed: boolean;
-  canResume: boolean;
+}
+
+interface CodeExplanationDto {
+  code: string;
+  language: string;
+  context?: string;
+  userId: string;
+  explanationDepth: 'brief' | 'detailed' | 'expert';
+}
+
+interface CodeExplanation {
+  summary: string;
+  lineByLine: LineExplanation[];
+  keyConceptsUsed: Concept[];
+  potentialIssues: Issue[];
+  improvements: Improvement[];
+  learningOpportunities: LearningOpportunity[];
+  visualDiagram?: string;  // Mermaid or ASCII diagram
+}
+
+interface SkillProfile {
+  userId: string;
+  skills: SkillLevel[];
+  strengths: string[];
+  gaps: SkillGap[];
+  recommendedLearning: LearningPath[];
+  progressOverTime: ProgressDataPoint[];
+}
+
+interface SkillLevel {
+  skill: string;
+  level: 'novice' | 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  confidence: number;
+  lastAssessed: Date;
+  evidenceCount: number;  // Number of projects/challenges demonstrating this skill
 }
 ```
 
+
 ### 2. ConciergeService
 
-**Responsibility**: Core orchestration logic for Smart Concierge
+**Responsibility**: Core orchestration for learning and technical assistance
 
 **Interface**:
 
@@ -217,20 +288,23 @@ interface WorkflowState {
 @Injectable()
 export class ConciergeService {
   constructor(
-    private intentAnalyzer: IntentAnalyzer,
+    private learningPathEngine: LearningPathEngine,
+    private technicalCopilot: TechnicalCopilot,
+    private skillAnalyzer: SkillAnalyzer,
     private contextEngine: ContextEngine,
-    private suggestionEngine: SuggestionEngine,
-    private workflowOrchestrator: WorkflowOrchestrator,
-    private learningModule: LearningModule,
+    private resourceCurator: ResourceCurator,
+    private mentorMatcher: MentorMatcher,
+    private adaptiveLearning: AdaptiveLearningModule,
     private prisma: PrismaService,
     private redis: RedisService
   ) {}
   
   async processQuery(dto: ConciergeQueryDto): Promise<ConciergeResponse>
-  async generateSuggestions(userId: string, context: UserContext): Promise<Suggestion[]>
-  async startWorkflow(type: string, userId: string, initialData: any): Promise<WorkflowState>
-  async continueWorkflow(workflowId: string, stepData: any): Promise<WorkflowState>
-  async recordInteraction(userId: string, interaction: InteractionRecord): Promise<void>
+  async generateLearningPath(goal: string, userId: string): Promise<LearningPath>
+  async explainCode(code: string, context: LearningContext): Promise<CodeExplanation>
+  async assessSkills(userId: string): Promise<SkillProfile>
+  async recommendNextLearning(userId: string): Promise<LearningOpportunity[]>
+  async trackProgress(userId: string, activity: LearningActivity): Promise<void>
 }
 ```
 
@@ -238,168 +312,636 @@ export class ConciergeService {
 
 ```typescript
 async processQuery(dto: ConciergeQueryDto): Promise<ConciergeResponse> {
-  // 1. Load user context
-  const context = await this.contextEngine.getUserContext(dto.userId, dto.projectId);
+  // 1. Load learning context
+  const context = await this.contextEngine.getLearningContext(
+    dto.userId, 
+    dto.projectId,
+    dto.codeContext
+  );
   
-  // 2. Classify intent
-  const intent = await this.intentAnalyzer.classifyIntent(dto.query, context);
+  // 2. Classify intent with learning focus
+  const intent = await this.classifyLearningIntent(dto.query, context);
   
-  // 3. Check if clarification needed
-  if (intent.needsClarification) {
-    return this.buildClarificationResponse(intent);
+  // 3. Route to appropriate handler
+  let response: ConciergeResponse;
+  
+  switch (intent.category) {
+    case 'technical_question':
+      response = await this.technicalCopilot.answer(dto.query, context);
+      break;
+      
+    case 'code_explanation':
+      response = await this.technicalCopilot.explainCode(dto.codeContext, context);
+      break;
+      
+    case 'learning_path':
+      response = await this.learningPathEngine.generatePath(dto.query, context);
+      break;
+      
+    case 'skill_assessment':
+      response = await this.skillAnalyzer.assess(dto.userId, context);
+      break;
+      
+    case 'debug_help':
+      response = await this.technicalCopilot.debugAssist(dto.query, dto.codeContext, context);
+      break;
+      
+    case 'concept_explanation':
+      response = await this.explainConcept(intent.concept, context);
+      break;
+      
+    case 'resource_request':
+      response = await this.resourceCurator.findResources(intent.topic, context);
+      break;
+      
+    case 'mentor_request':
+      response = await this.mentorMatcher.findMentor(intent.need, context);
+      break;
+      
+    default:
+      response = await this.handleGeneralQuery(dto.query, context);
   }
   
-  // 4. Check for active workflow
-  const activeWorkflow = await this.workflowOrchestrator.getActiveWorkflow(dto.userId);
-  if (activeWorkflow) {
-    return this.continueWorkflowInteraction(activeWorkflow, dto.query, intent);
-  }
+  // 4. Identify learning opportunities
+  const learningOps = await this.identifyLearningOpportunities(
+    dto.query,
+    response,
+    context
+  );
   
-  // 5. Determine if query should start a workflow
-  if (this.shouldStartWorkflow(intent)) {
-    const workflow = await this.workflowOrchestrator.startWorkflow(
-      intent.type,
-      dto.userId,
-      intent.entities
-    );
-    return this.buildWorkflowResponse(workflow, context);
-  }
+  // 5. Generate contextual suggestions
+  const suggestions = await this.generateLearningSuggestions(context, intent);
   
-  // 6. Generate direct response
-  const response = await this.generateDirectResponse(intent, context);
+  // 6. Adapt to user's learning style
+  response = await this.adaptiveLearning.personalizeResponse(
+    response,
+    context.learningProfile
+  );
   
-  // 7. Generate contextual suggestions
-  const suggestions = await this.suggestionEngine.generateSuggestions(context, intent);
-  
-  // 8. Record interaction for learning
-  await this.learningModule.recordInteraction({
+  // 7. Track interaction for learning analytics
+  await this.trackLearningInteraction({
     userId: dto.userId,
     query: dto.query,
-    intent: intent.type,
-    confidence: intent.confidence,
+    intent: intent.category,
+    response: response,
     timestamp: new Date()
   });
   
   return {
-    intent,
-    response: response.text,
+    ...response,
+    learningOpportunities: learningOps,
     suggestions,
-    actions: response.quickActions,
-    confidence: intent.confidence
+    nextSteps: await this.generateNextSteps(context)
   };
 }
 ```
 
-### 3. IntentAnalyzer
+### 3. LearningPathEngine
 
-**Responsibility**: Enhanced intent classification with entity extraction
+**Responsibility**: Generate personalized learning roadmaps
 
 **Interface**:
 
 ```typescript
 @Injectable()
-export class IntentAnalyzer {
+export class LearningPathEngine {
   constructor(
-    private existingIntentService: IntentService,
+    private skillAnalyzer: SkillAnalyzer,
+    private conceptMapper: ConceptMapper,
+    private resourceCurator: ResourceCurator,
     private llm: LLMService,
-    private redis: RedisService
+    private knowledgeGraph: KnowledgeGraphService
   ) {}
   
-  async classifyIntent(query: string, context: UserContext): Promise<IntentClassification>
-  async extractEntities(query: string, intentType: string): Promise<Record<string, any>>
-  async validateIntent(intent: IntentClassification, context: UserContext): Promise<boolean>
+  async generatePath(goal: string, context: LearningContext): Promise<LearningPath>
+  async adaptPath(pathId: string, progress: LearningProgress): Promise<LearningPath>
+  async suggestNextStep(pathId: string, userId: string): Promise<NextStep>
+  async breakDownGoal(goal: string): Promise<LearningPhase[]>
 }
 ```
 
-**Intent Categories**:
+**Path Generation Strategy**:
 
 ```typescript
-enum IntentType {
-  // Workflow intents
-  BOOK_MENTOR = 'book_mentor',
-  TRACK_SUBMISSION = 'track_submission',
-  FIND_RESOURCES = 'find_resources',
-  CHECK_APPROVAL = 'check_approval',
-  RESERVE_EQUIPMENT = 'reserve_equipment',
-  SUBMIT_PURCHASE = 'submit_purchase',
+async generatePath(goal: string, context: LearningContext): Promise<LearningPath> {
+  // 1. Analyze the goal
+  const goalAnalysis = await this.analyzeGoal(goal);
+  // Extract: required technologies, concepts, difficulty level
   
-  // Information intents
-  VIEW_INVENTORY = 'view_inventory',
-  GET_PROJECT_STATUS = 'get_project_status',
-  LIST_MENTORS = 'list_mentors',
-  VIEW_TASKS = 'view_tasks',
+  // 2. Assess current skill level
+  const currentSkills = await this.skillAnalyzer.assessSkills(context.userId);
   
-  // Action intents
-  ADD_TASK = 'add_task',
-  UPDATE_PROJECT = 'update_project',
-  ADD_LOG = 'add_log',
+  // 3. Identify skill gaps
+  const gaps = this.identifyGaps(goalAnalysis.requiredSkills, currentSkills);
   
-  // Meta intents
-  GET_HELP = 'get_help',
-  CLARIFY = 'clarify',
-  UNKNOWN = 'unknown'
-}
-```
-
-**Classification Strategy**:
-
-```typescript
-async classifyIntent(query: string, context: UserContext): Promise<IntentClassification> {
-  // 1. Check cache for similar queries
-  const cached = await this.getCachedIntent(query);
-  if (cached && cached.confidence > 0.9) {
-    return cached;
-  }
-  
-  // 2. Use existing IntentService for base classification
-  const baseIntent = await this.existingIntentService.parse(query, {
-    userId: context.userId,
-    projectId: context.activeProjectId,
-    recentActions: context.recentActions
-  });
-  
-  // 3. If confidence is low, use enhanced LLM classification
-  if (baseIntent.confidence < 0.7) {
-    const enhancedIntent = await this.enhancedClassification(query, context);
-    if (enhancedIntent.confidence > baseIntent.confidence) {
-      return enhancedIntent;
-    }
-  }
-  
-  // 4. Extract entities for the classified intent
-  const entities = await this.extractEntities(query, baseIntent.type);
-  
-  // 5. Validate intent against context
-  const isValid = await this.validateIntent(
-    { ...baseIntent, entities },
-    context
+  // 4. Query knowledge graph for learning paths
+  const conceptDependencies = await this.knowledgeGraph.getConceptDependencies(
+    goalAnalysis.concepts
   );
   
-  if (!isValid) {
-    return {
-      type: IntentType.CLARIFY,
-      entities: {},
-      confidence: 0.5,
-      needsClarification: true,
-      clarificationPrompt: this.generateClarificationPrompt(baseIntent, context)
-    };
+  // 5. Generate learning phases
+  const phases: LearningPhase[] = [];
+  
+  // Phase 1: Prerequisites (if needed)
+  if (gaps.prerequisites.length > 0) {
+    phases.push(await this.createPrerequisitePhase(gaps.prerequisites));
   }
   
-  // 6. Cache successful classification
-  await this.cacheIntent(query, { ...baseIntent, entities });
+  // Phase 2-N: Core learning phases
+  for (const concept of conceptDependencies.orderedConcepts) {
+    phases.push(await this.createLearningPhase(concept, context));
+  }
   
+  // Final Phase: Capstone project
+  phases.push(await this.createProjectPhase(goal, goalAnalysis));
+  
+  // 6. Curate resources for each phase
+  for (const phase of phases) {
+    phase.resources = await this.resourceCurator.findResources(
+      phase.concepts,
+      context.learningProfile
+    );
+    
+    phase.challenges = await this.challengeGenerator.createChallenges(
+      phase.concepts,
+      currentSkills.level
+    );
+  }
+  
+  // 7. Estimate time
+  const estimatedDuration = this.estimateDuration(
+    phases,
+    context.timeCommitment,
+    currentSkills.level
+  );
+  
+  // 8. Create and store learning path
+  const learningPath: LearningPath = {
+    id: generateId(),
+    userId: context.userId,
+    goal,
+    phases,
+    estimatedDuration,
+    currentPhase: 0,
+    progress: 0,
+    skillsToAcquire: goalAnalysis.requiredSkills,
+    prerequisites: gaps.prerequisites,
+    createdAt: new Date()
+  };
+  
+  await this.prisma.learningPath.create({ data: learningPath });
+  
+  return learningPath;
+}
+
+async createLearningPhase(concept: Concept, context: LearningContext): Promise<LearningPhase> {
   return {
-    type: baseIntent.type,
-    entities,
-    confidence: baseIntent.confidence,
-    needsClarification: false
+    id: generateId(),
+    title: `Learn ${concept.name}`,
+    description: concept.description,
+    concepts: [concept, ...concept.relatedConcepts],
+    resources: [],  // Filled later
+    projects: await this.generateMiniProjects(concept),
+    challenges: [],  // Filled later
+    estimatedTime: this.estimateConceptTime(concept, context.learningProfile),
+    completed: false,
+    learningObjectives: concept.learningObjectives,
+    assessmentCriteria: concept.assessmentCriteria
   };
 }
 ```
 
-### 4. ContextEngine
+### 4. TechnicalCopilot
 
-**Responsibility**: Maintain and analyze user context for personalization
+**Responsibility**: Real-time technical assistance and code help
+
+**Interface**:
+
+```typescript
+@Injectable()
+export class TechnicalCopilot {
+  constructor(
+    private codeExplainer: CodeExplainer,
+    private debugAssistant: DebugAssistant,
+    private projectGuide: ProjectGuide,
+    private llm: LLMService,
+    private rag: RagService
+  ) {}
+  
+  async answer(question: string, context: LearningContext): Promise<ConciergeResponse>
+  async explainCode(code: string, context: LearningContext): Promise<CodeExplanation>
+  async debugAssist(problem: string, code: string, context: LearningContext): Promise<DebugSuggestion>
+  async suggestImprovements(code: string, context: LearningContext): Promise<Improvement[]>
+  async guideProjectStep(projectId: string, context: LearningContext): Promise<ProjectGuidance>
+}
+```
+
+**Technical Question Answering**:
+
+```typescript
+async answer(question: string, context: LearningContext): Promise<ConciergeResponse> {
+  // 1. Understand the question depth
+  const questionAnalysis = await this.analyzeQuestion(question);
+  
+  // 2. Retrieve relevant knowledge
+  const relevantDocs = await this.rag.search(question, {
+    filters: {
+      relevantTo: context.currentProject,
+      skillLevel: context.skillLevel
+    }
+  });
+  
+  // 3. Check if this is a learning opportunity
+  const isNewConcept = !context.knownConcepts.includes(questionAnalysis.mainConcept);
+  
+  // 4. Generate answer with appropriate depth
+  let answer: string;
+  let explanation: DetailedExplanation;
+  
+  if (isNewConcept) {
+    // Provide foundational explanation first
+    answer = await this.llm.generate({
+      prompt: this.buildTeachingPrompt(question, context, relevantDocs),
+      temperature: 0.7
+    });
+    
+    explanation = await this.buildLayeredExplanation(
+      questionAnalysis.mainConcept,
+      context.skillLevel
+    );
+  } else {
+    // Direct answer for known concepts
+    answer = await this.llm.generate({
+      prompt: this.buildDirectAnswerPrompt(question, context, relevantDocs),
+      temperature: 0.5
+    });
+  }
+  
+  // 5. Identify related concepts to explore
+  const relatedConcepts = await this.knowledgeGraph.getRelatedConcepts(
+    questionAnalysis.mainConcept
+  );
+  
+  // 6. Generate code examples if applicable
+  const codeExamples = questionAnalysis.needsCodeExample
+    ? await this.generateCodeExamples(questionAnalysis.mainConcept, context)
+    : [];
+  
+  // 7. Create visual aids
+  const visualAids = await this.generateVisualAids(questionAnalysis.mainConcept);
+  
+  return {
+    intent: { type: 'technical_question', confidence: 0.95 },
+    response: answer,
+    explanation,
+    suggestions: this.generateFollowUpSuggestions(questionAnalysis, relatedConcepts),
+    learningOpportunities: isNewConcept ? [
+      {
+        concept: questionAnalysis.mainConcept,
+        reason: 'New concept encountered',
+        resources: await this.resourceCurator.findResources(questionAnalysis.mainConcept, context),
+        estimatedTime: '15-30 minutes'
+      }
+    ] : [],
+    codeExamples,
+    visualAids,
+    confidence: 0.95
+  };
+}
+```
+
+### 5. CodeExplainer
+
+**Responsibility**: Break down and explain code
+
+**Interface**:
+
+```typescript
+@Injectable()
+export class CodeExplainer {
+  constructor(
+    private codeAnalyzer: CodeAnalyzerService,
+    private llm: LLMService,
+    private conceptMapper: ConceptMapper
+  ) {}
+  
+  async explainCode(code: string, language: string, context: LearningContext): Promise<CodeExplanation>
+  async explainLineByLine(code: string, language: string): Promise<LineExplanation[]>
+  async identifyPatterns(code: string, language: string): Promise<Pattern[]>
+  async suggestImprovements(code: string, language: string): Promise<Improvement[]>
+}
+```
+
+**Code Explanation Strategy**:
+
+```typescript
+async explainCode(
+  code: string, 
+  language: string, 
+  context: LearningContext
+): Promise<CodeExplanation> {
+  // 1. Parse and analyze code structure
+  const analysis = await this.codeAnalyzer.analyze(code, language);
+  
+  // 2. Identify concepts used
+  const conceptsUsed = await this.conceptMapper.identifyConceptsInCode(analysis);
+  
+  // 3. Determine which concepts are new to the user
+  const newConcepts = conceptsUsed.filter(
+    c => !context.knownConcepts.includes(c.id)
+  );
+  
+  // 4. Generate high-level summary
+  const summary = await this.llm.generate({
+    prompt: `Explain what this ${language} code does in 2-3 sentences:\n\n${code}`,
+    temperature: 0.5
+  });
+  
+  // 5. Generate line-by-line explanations
+  const lineByLine = await this.explainLineByLine(code, language);
+  
+  // 6. Identify potential issues
+  const issues = await this.identifyIssues(analysis, context.skillLevel);
+  
+  // 7. Suggest improvements
+  const improvements = await this.suggestImprovements(code, language);
+  
+  // 8. Create learning opportunities for new concepts
+  const learningOpportunities = newConcepts.map(concept => ({
+    concept: concept.name,
+    reason: `Used in this code but not yet mastered`,
+    quickExplanation: concept.briefDescription,
+    deepDiveResource: concept.learningResource,
+    estimatedTime: '10-20 minutes'
+  }));
+  
+  // 9. Generate visual diagram if helpful
+  let visualDiagram: string | undefined;
+  if (analysis.complexity > 5 || analysis.hasLoops || analysis.hasRecursion) {
+    visualDiagram = await this.generateFlowDiagram(analysis);
+  }
+  
+  return {
+    summary,
+    lineByLine,
+    keyConceptsUsed: conceptsUsed,
+    potentialIssues: issues,
+    improvements,
+    learningOpportunities,
+    visualDiagram,
+    complexity: analysis.complexity,
+    readabilityScore: analysis.readabilityScore
+  };
+}
+
+async explainLineByLine(code: string, language: string): Promise<LineExplanation[]> {
+  const lines = code.split('\n');
+  const explanations: LineExplanation[] = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.length === 0 || line.startsWith('//') || line.startsWith('#')) {
+      continue;  // Skip empty lines and comments
+    }
+    
+    const explanation = await this.llm.generate({
+      prompt: `Explain this ${language} code line in simple terms:\n${line}`,
+      temperature: 0.5,
+      maxTokens: 100
+    });
+    
+    explanations.push({
+      lineNumber: i + 1,
+      code: line,
+      explanation,
+      concepts: await this.conceptMapper.identifyConceptsInLine(line, language)
+    });
+  }
+  
+  return explanations;
+}
+```
+
+### 6. SkillAnalyzer
+
+**Responsibility**: Assess skills and identify gaps
+
+**Interface**:
+
+```typescript
+@Injectable()
+export class SkillAnalyzer {
+  constructor(
+    private prisma: PrismaService,
+    private conceptMapper: ConceptMapper,
+    private llm: LLMService
+  ) {}
+  
+  async assessSkills(userId: string): Promise<SkillProfile>
+  async identifyGaps(userId: string, targetGoal: string): Promise<SkillGap[]>
+  async trackSkillDevelopment(userId: string, activity: LearningActivity): Promise<void>
+  async generateSkillMap(userId: string): Promise<SkillMap>
+}
+```
+
+**Skill Assessment Strategy**:
+
+```typescript
+async assessSkills(userId: string): Promise<SkillProfile> {
+  // 1. Load user's learning history
+  const history = await this.prisma.learningActivity.findMany({
+    where: { userId },
+    include: {
+      conceptsLearned: true,
+      projectsCompleted: true,
+      challengesSolved: true
+    }
+  });
+  
+  // 2. Extract skills from activities
+  const skillEvidence: Map<string, SkillEvidence[]> = new Map();
+  
+  for (const activity of history) {
+    for (const concept of activity.conceptsLearned) {
+      if (!skillEvidence.has(concept.skill)) {
+        skillEvidence.set(concept.skill, []);
+      }
+      
+      skillEvidence.get(concept.skill).push({
+        type: activity.type,
+        timestamp: activity.timestamp,
+        success: activity.success,
+        complexity: activity.complexity
+      });
+    }
+  }
+  
+  // 3. Calculate skill levels
+  const skills: SkillLevel[] = [];
+  
+  for (const [skill, evidence] of skillEvidence.entries()) {
+    const level = this.calculateSkillLevel(evidence);
+    const confidence = this.calculateConfidence(evidence);
+    
+    skills.push({
+      skill,
+      level,
+      confidence,
+      lastAssessed: new Date(),
+      evidenceCount: evidence.length,
+      recentActivity: evidence.slice(-5)
+    });
+  }
+  
+  // 4. Identify strengths (top 20% of skills)
+  const sortedSkills = [...skills].sort((a, b) => 
+    this.skillLevelToNumber(b.level) - this.skillLevelToNumber(a.level)
+  );
+  const strengthThreshold = Math.ceil(sortedSkills.length * 0.2);
+  const strengths = sortedSkills.slice(0, strengthThreshold).map(s => s.skill);
+  
+  // 5. Identify gaps (skills with low levels or no evidence)
+  const gaps = await this.identifySkillGaps(userId, skills);
+  
+  // 6. Generate recommended learning paths
+  const recommendedLearning = await this.generateRecommendations(gaps, skills);
+  
+  // 7. Track progress over time
+  const progressOverTime = await this.getProgressHistory(userId);
+  
+  return {
+    userId,
+    skills,
+    strengths,
+    gaps,
+    recommendedLearning,
+    progressOverTime,
+    lastUpdated: new Date()
+  };
+}
+
+calculateSkillLevel(evidence: SkillEvidence[]): SkillLevel {
+  // Factors: recency, success rate, complexity, frequency
+  
+  const recentEvidence = evidence.filter(e => 
+    Date.now() - e.timestamp.getTime() < 30 * 24 * 60 * 60 * 1000  // Last 30 days
+  );
+  
+  if (recentEvidence.length === 0) {
+    return 'novice';
+  }
+  
+  const successRate = recentEvidence.filter(e => e.success).length / recentEvidence.length;
+  const avgComplexity = recentEvidence.reduce((sum, e) => sum + e.complexity, 0) / recentEvidence.length;
+  const frequency = evidence.length;
+  
+  // Scoring algorithm
+  const score = (successRate * 0.4) + (avgComplexity / 10 * 0.3) + (Math.min(frequency / 20, 1) * 0.3);
+  
+  if (score < 0.2) return 'novice';
+  if (score < 0.4) return 'beginner';
+  if (score < 0.6) return 'intermediate';
+  if (score < 0.8) return 'advanced';
+  return 'expert';
+}
+```
+
+### 7. ResourceCurator
+
+**Responsibility**: Find and rank learning resources
+
+**Interface**:
+
+```typescript
+@Injectable()
+export class ResourceCurator {
+  constructor(
+    private rag: RagService,
+    private llm: LLMService,
+    private prisma: PrismaService
+  ) {}
+  
+  async findResources(topic: string, context: LearningContext): Promise<Resource[]>
+  async rankResources(resources: Resource[], context: LearningContext): Promise<Resource[]>
+  async summarizeResource(resource: Resource): Promise<ResourceSummary>
+  async createLearningPlaylist(topics: string[], context: LearningContext): Promise<Playlist>
+}
+```
+
+**Resource Curation Strategy**:
+
+```typescript
+async findResources(topic: string, context: LearningContext): Promise<Resource[]> {
+  // 1. Search internal knowledge base
+  const internalResources = await this.rag.search(topic, {
+    filters: { type: 'learning_resource' }
+  });
+  
+  // 2. Query curated external resources
+  const externalResources = await this.prisma.curatedResource.findMany({
+    where: {
+      topics: { has: topic },
+      quality: { gte: 4.0 }
+    }
+  });
+  
+  // 3. Combine and deduplicate
+  const allResources = [...internalResources, ...externalResources];
+  
+  // 4. Filter by skill level
+  const levelAppropriate = allResources.filter(r => 
+    this.isAppropriateLevel(r, context.skillLevel)
+  );
+  
+  // 5. Filter by learning style preference
+  const styleMatched = this.filterByLearningStyle(
+    levelAppropriate,
+    context.learningProfile.preferredStyle
+  );
+  
+  // 6. Rank by relevance and quality
+  const ranked = await this.rankResources(styleMatched, context);
+  
+  // 7. Generate summaries for top resources
+  for (const resource of ranked.slice(0, 10)) {
+    resource.summary = await this.summarizeResource(resource);
+  }
+  
+  return ranked.slice(0, 10);
+}
+
+async rankResources(resources: Resource[], context: LearningContext): Promise<Resource[]> {
+  const scored = resources.map(resource => {
+    let score = 0;
+    
+    // Quality score (40%)
+    score += (resource.rating / 5) * 0.4;
+    
+    // Recency score (20%)
+    const ageInDays = (Date.now() - resource.publishedDate.getTime()) / (1000 * 60 * 60 * 24);
+    const recencyScore = Math.max(0, 1 - (ageInDays / 365));
+    score += recencyScore * 0.2;
+    
+    // Relevance score (30%)
+    const relevanceScore = this.calculateRelevance(resource, context);
+    score += relevanceScore * 0.3;
+    
+    // User preference score (10%)
+    const preferenceScore = this.matchesPreferences(resource, context.learningProfile);
+    score += preferenceScore * 0.1;
+    
+    return { resource, score };
+  });
+  
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .map(s => s.resource);
+}
+```
+
+### 8. ContextEngine
+
+**Responsibility**: Maintain learning context and user state
 
 **Interface**:
 
@@ -408,467 +950,408 @@ async classifyIntent(query: string, context: UserContext): Promise<IntentClassif
 export class ContextEngine {
   constructor(
     private prisma: PrismaService,
-    private memoryService: MemoryService,
     private redis: RedisService
   ) {}
   
-  async getUserContext(userId: string, projectId?: string): Promise<UserContext>
-  async updateContext(userId: string, updates: Partial<UserContext>): Promise<void>
-  async getRecentActions(userId: string, limit: number): Promise<UserAction[]>
-  async getActiveWorkflows(userId: string): Promise<WorkflowState[]>
+  async getLearningContext(userId: string, projectId?: string, codeContext?: string): Promise<LearningContext>
+  async updateContext(userId: string, updates: Partial<LearningContext>): Promise<void>
+  async trackLearningActivity(activity: LearningActivity): Promise<void>
+  async getRecentLearning(userId: string, limit: number): Promise<LearningActivity[]>
 }
 ```
 
-**UserContext Structure**:
+**LearningContext Structure**:
 
 ```typescript
-interface UserContext {
+interface LearningContext {
   userId: string;
-  role: string;
-  activeProjectId?: string;
+  skillLevel: 'beginner' | 'intermediate' | 'advanced';
   
-  // Project context
-  projects: {
+  // Current focus
+  currentProject?: {
     id: string;
     title: string;
-    status: string;
-    feasibilityScore?: number;
-    missingResources: number;
-    pendingTasks: number;
-    lastActivity: Date;
-  }[];
-  
-  // Pending items
-  pendingApprovals: number;
-  pendingReservations: number;
-  pendingPurchases: number;
-  
-  // Recent activity
-  recentActions: UserAction[];
-  conversationHistory: ConversationMessage[];
-  
-  // Workflow state
-  activeWorkflows: WorkflowState[];
-  
-  // Learning data
-  frequentIntents: string[];
-  preferredWorkflows: string[];
-  interactionPatterns: InteractionPattern[];
-}
-
-interface UserAction {
-  type: string;
-  timestamp: Date;
-  entityId?: string;
-  metadata?: any;
-}
-
-interface InteractionPattern {
-  pattern: string;
-  frequency: number;
-  lastOccurrence: Date;
-  successRate: number;
-}
-```
-
-**Context Loading Strategy**:
-
-```typescript
-async getUserContext(userId: string, projectId?: string): Promise<UserContext> {
-  // 1. Check Redis cache
-  const cached = await this.redis.get(`context:${userId}`);
-  if (cached && this.isFresh(cached)) {
-    return JSON.parse(cached);
-  }
-  
-  // 2. Load from database
-  const [user, projects, approvals, reservations, purchases, actions, patterns] = 
-    await Promise.all([
-      this.prisma.user.findUnique({ where: { id: userId } }),
-      this.loadUserProjects(userId),
-      this.loadPendingApprovals(userId),
-      this.loadPendingReservations(userId),
-      this.loadPendingPurchases(userId),
-      this.getRecentActions(userId, 20),
-      this.loadInteractionPatterns(userId)
-    ]);
-  
-  // 3. Load conversation history from MemoryService
-  const conversationHistory = this.memoryService.getHistory(projectId);
-  
-  // 4. Load active workflows
-  const activeWorkflows = await this.getActiveWorkflows(userId);
-  
-  // 5. Build context object
-  const context: UserContext = {
-    userId,
-    role: user.role,
-    activeProjectId: projectId,
-    projects,
-    pendingApprovals: approvals.length,
-    pendingReservations: reservations.length,
-    pendingPurchases: purchases.length,
-    recentActions: actions,
-    conversationHistory: conversationHistory.messages,
-    activeWorkflows,
-    frequentIntents: this.extractFrequentIntents(patterns),
-    preferredWorkflows: this.extractPreferredWorkflows(patterns),
-    interactionPatterns: patterns
+    technologies: string[];
+    currentPhase: string;
+    blockers: string[];
   };
   
-  // 6. Cache for 5 minutes
-  await this.redis.setex(`context:${userId}`, 300, JSON.stringify(context));
+  // Learning state
+  activeLearningPath?: LearningPath;
+  currentLearningSession?: LearningSession;
+  knownConcepts: string[];
+  conceptsInProgress: string[];
   
-  return context;
+  // Skill profile
+  skills: SkillLevel[];
+  strengths: string[];
+  gaps: SkillGap[];
+  
+  // Learning preferences
+  learningProfile: {
+    preferredStyle: 'visual' | 'hands-on' | 'reading' | 'mixed';
+    pace: 'slow' | 'moderate' | 'fast';
+    explanationDepth: 'brief' | 'detailed' | 'expert';
+    timeCommitment: string;
+  };
+  
+  // Recent activity
+  recentLearning: LearningActivity[];
+  recentQuestions: string[];
+  strugglingWith: string[];
+  
+  // Progress
+  completedChallenges: number;
+  completedProjects: number;
+  learningStreak: number;
+  totalLearningTime: number;
 }
 ```
 
-### 5. SuggestionEngine
 
-**Responsibility**: Generate contextual, personalized suggestions
+### 9. ConceptMapper
+
+**Responsibility**: Visualize knowledge relationships
 
 **Interface**:
 
 ```typescript
 @Injectable()
-export class SuggestionEngine {
+export class ConceptMapper {
   constructor(
-    private ragService: RagService,
-    private llm: LLMService,
-    private learningModule: LearningModule
-  ) {}
-  
-  async generateSuggestions(
-    context: UserContext,
-    currentIntent?: IntentClassification
-  ): Promise<Suggestion[]>
-  
-  async rankSuggestions(
-    suggestions: Suggestion[],
-    context: UserContext
-  ): Promise<Suggestion[]>
-  
-  async generateWorkflowSuggestions(
-    workflowType: string,
-    currentStep: number
-  ): Promise<Suggestion[]>
-}
-```
-
-**Suggestion Generation Strategy**:
-
-```typescript
-async generateSuggestions(
-  context: UserContext,
-  currentIntent?: IntentClassification
-): Promise<Suggestion[]> {
-  const suggestions: Suggestion[] = [];
-  
-  // 1. Workflow-based suggestions
-  if (context.activeWorkflows.length > 0) {
-    const workflowSuggestions = await this.generateWorkflowSuggestions(
-      context.activeWorkflows[0].type,
-      context.activeWorkflows[0].currentStep
-    );
-    suggestions.push(...workflowSuggestions);
-  }
-  
-  // 2. Context-based suggestions
-  if (context.pendingApprovals > 0 && context.role === 'hod') {
-    suggestions.push({
-      id: 'review-approvals',
-      title: 'Review Pending Approvals',
-      description: `You have ${context.pendingApprovals} approvals waiting`,
-      action: 'navigate:/approvals',
-      relevanceScore: 0.95,
-      category: 'action'
-    });
-  }
-  
-  if (context.projects.some(p => p.missingResources > 0)) {
-    const project = context.projects.find(p => p.missingResources > 0);
-    suggestions.push({
-      id: 'submit-purchase',
-      title: 'Submit Purchase Request',
-      description: `${project.title} needs ${project.missingResources} resources`,
-      action: 'workflow:submit_purchase',
-      relevanceScore: 0.9,
-      category: 'workflow'
-    });
-  }
-  
-  if (context.projects.some(p => p.pendingTasks > 0)) {
-    const project = context.projects.find(p => p.pendingTasks > 0);
-    suggestions.push({
-      id: 'view-tasks',
-      title: 'Review Pending Tasks',
-      description: `${project.title} has ${project.pendingTasks} pending tasks`,
-      action: 'navigate:/projects/${project.id}/tasks',
-      relevanceScore: 0.85,
-      category: 'action'
-    });
-  }
-  
-  // 3. Pattern-based suggestions (from learning)
-  const learnedSuggestions = await this.learningModule.getSuggestionsForUser(
-    context.userId,
-    context
-  );
-  suggestions.push(...learnedSuggestions);
-  
-  // 4. Intent-based suggestions
-  if (currentIntent) {
-    const intentSuggestions = this.getIntentRelatedSuggestions(currentIntent);
-    suggestions.push(...intentSuggestions);
-  }
-  
-  // 5. RAG-based suggestions (knowledge base)
-  const ragSuggestions = await this.generateRAGSuggestions(context);
-  suggestions.push(...ragSuggestions);
-  
-  // 6. Rank and filter
-  const ranked = await this.rankSuggestions(suggestions, context);
-  
-  // 7. Return top 5
-  return ranked.slice(0, 5);
-}
-```
-
-### 6. WorkflowOrchestrator
-
-**Responsibility**: Manage multi-step workflow execution
-
-**Interface**:
-
-```typescript
-@Injectable()
-export class WorkflowOrchestrator {
-  constructor(
-    private mentorWorkflow: MentorBookingWorkflow,
-    private trackingWorkflow: SubmissionTrackingWorkflow,
-    private resourceWorkflow: ResourceDiscoveryWorkflow,
-    private approvalWorkflow: ApprovalStatusWorkflow,
-    private redis: RedisService,
+    private knowledgeGraph: KnowledgeGraphService,
     private prisma: PrismaService
   ) {}
   
-  async startWorkflow(type: string, userId: string, initialData: any): Promise<WorkflowState>
-  async executeStep(workflowId: string, stepData: any): Promise<WorkflowState>
-  async getWorkflowState(workflowId: string): Promise<WorkflowState>
-  async pauseWorkflow(workflowId: string): Promise<void>
-  async resumeWorkflow(workflowId: string): Promise<WorkflowState>
-  async cancelWorkflow(workflowId: string): Promise<void>
-  async getActiveWorkflow(userId: string): Promise<WorkflowState | null>
+  async generateConceptMap(concepts: string[]): Promise<ConceptMap>
+  async getConceptDependencies(concept: string): Promise<ConceptDependency[]>
+  async visualizeLearningPath(pathId: string): Promise<PathVisualization>
+  async identifyConceptsInCode(code: CodeAnalysis): Promise<Concept[]>
 }
 ```
 
-**Workflow Base Class**:
+### 10. ChallengeGenerator
 
-```typescript
-abstract class BaseWorkflow {
-  abstract readonly type: string;
-  abstract readonly steps: WorkflowStep[];
-  
-  async execute(state: WorkflowState, input: any): Promise<WorkflowState> {
-    const currentStep = this.steps[state.currentStep];
-    
-    // Validate input
-    const validation = await currentStep.validate(input);
-    if (!validation.valid) {
-      return {
-        ...state,
-        error: validation.error,
-        needsInput: true
-      };
-    }
-    
-    // Execute step
-    const result = await currentStep.execute(input, state);
-    
-    // Update state
-    const newState: WorkflowState = {
-      ...state,
-      currentStep: state.currentStep + 1,
-      stepData: { ...state.stepData, ...result },
-      completed: state.currentStep + 1 >= this.steps.length,
-      needsInput: false
-    };
-    
-    return newState;
-  }
-  
-  async getNextStepPrompt(state: WorkflowState): Promise<string> {
-    if (state.completed) {
-      return this.getCompletionMessage(state);
-    }
-    
-    const nextStep = this.steps[state.currentStep];
-    return nextStep.getPrompt(state);
-  }
-  
-  abstract getCompletionMessage(state: WorkflowState): string;
-}
-
-interface WorkflowStep {
-  name: string;
-  validate(input: any): Promise<{ valid: boolean; error?: string }>;
-  execute(input: any, state: WorkflowState): Promise<any>;
-  getPrompt(state: WorkflowState): string;
-}
-```
-
-**Example: MentorBookingWorkflow**:
-
-```typescript
-@Injectable()
-export class MentorBookingWorkflow extends BaseWorkflow {
-  readonly type = 'book_mentor';
-  readonly steps: WorkflowStep[] = [
-    new SearchMentorStep(this.prisma),
-    new SelectMentorStep(this.prisma),
-    new ScheduleSessionStep(this.prisma),
-    new ConfirmBookingStep(this.prisma, this.notificationService)
-  ];
-  
-  constructor(
-    private prisma: PrismaService,
-    private notificationService: NotificationService
-  ) {
-    super();
-  }
-  
-  getCompletionMessage(state: WorkflowState): string {
-    const mentor = state.stepData.selectedMentor;
-    const schedule = state.stepData.schedule;
-    return `✅ Mentor session booked with ${mentor.name} on ${schedule.date} at ${schedule.time}. You'll receive a confirmation email shortly.`;
-  }
-}
-
-class SearchMentorStep implements WorkflowStep {
-  name = 'search_mentor';
-  
-  constructor(private prisma: PrismaService) {}
-  
-  async validate(input: any): Promise<{ valid: boolean; error?: string }> {
-    if (!input.query && !input.expertise) {
-      return { valid: false, error: 'Please specify expertise area or mentor name' };
-    }
-    return { valid: true };
-  }
-  
-  async execute(input: any, state: WorkflowState): Promise<any> {
-    const mentors = await this.prisma.mentor.findMany({
-      where: {
-        available: true,
-        OR: [
-          { specialization: { has: input.expertise } },
-          { user: { name: { contains: input.query, mode: 'insensitive' } } }
-        ]
-      },
-      include: { user: true },
-      take: 5
-    });
-    
-    return { availableMentors: mentors };
-  }
-  
-  getPrompt(state: WorkflowState): string {
-    return 'What expertise area are you looking for? (e.g., IoT, Machine Learning, Web Development)';
-  }
-}
-```
-
-### 7. LearningModule
-
-**Responsibility**: Track patterns and improve suggestions over time
+**Responsibility**: Create practice challenges
 
 **Interface**:
 
 ```typescript
 @Injectable()
-export class LearningModule {
+export class ChallengeGenerator {
+  constructor(
+    private llm: LLMService,
+    private skillAnalyzer: SkillAnalyzer
+  ) {}
+  
+  async generateChallenge(topic: string, skillLevel: string): Promise<Challenge>
+  async evaluateSubmission(submission: ChallengeSubmission): Promise<ChallengeFeedback>
+  async provideHint(challengeId: string, attemptCount: number): Promise<Hint>
+  async generateFollowUp(challengeId: string, performance: number): Promise<Challenge>
+}
+```
+
+**Challenge Generation**:
+
+```typescript
+async generateChallenge(topic: string, skillLevel: string): Promise<Challenge> {
+  // 1. Determine appropriate difficulty
+  const difficulty = this.mapSkillLevelToDifficulty(skillLevel);
+  
+  // 2. Generate challenge using LLM
+  const challengePrompt = `
+    Create a coding challenge for ${topic} at ${difficulty} difficulty.
+    Include:
+    - Clear problem statement
+    - Input/output examples
+    - Constraints
+    - Learning objectives
+    - Starter code template
+  `;
+  
+  const challengeData = await this.llm.generate({
+    prompt: challengePrompt,
+    temperature: 0.8
+  });
+  
+  // 3. Generate test cases
+  const testCases = await this.generateTestCases(challengeData, difficulty);
+  
+  // 4. Create hints
+  const hints = await this.generateHints(challengeData, 3);
+  
+  return {
+    id: generateId(),
+    topic,
+    difficulty,
+    title: challengeData.title,
+    description: challengeData.description,
+    starterCode: challengeData.starterCode,
+    testCases,
+    hints,
+    learningObjectives: challengeData.objectives,
+    estimatedTime: this.estimateChallengeTime(difficulty),
+    points: this.calculatePoints(difficulty)
+  };
+}
+
+async evaluateSubmission(submission: ChallengeSubmission): Promise<ChallengeFeedback> {
+  // 1. Run test cases
+  const testResults = await this.runTests(submission.code, submission.challengeId);
+  
+  // 2. Analyze code quality
+  const codeAnalysis = await this.codeAnalyzer.analyze(submission.code, submission.language);
+  
+  // 3. Generate feedback
+  const feedback = await this.llm.generate({
+    prompt: `
+      Provide constructive feedback on this code submission:
+      ${submission.code}
+      
+      Test results: ${testResults.passed}/${testResults.total} passed
+      Code quality: ${codeAnalysis.readabilityScore}/10
+      
+      Focus on:
+      - What they did well
+      - Areas for improvement
+      - Learning opportunities
+      - Next steps
+    `,
+    temperature: 0.7
+  });
+  
+  return {
+    passed: testResults.passed === testResults.total,
+    testResults,
+    codeQuality: codeAnalysis.readabilityScore,
+    feedback,
+    improvements: await this.suggestImprovements(submission.code),
+    nextChallenge: testResults.passed === testResults.total 
+      ? await this.generateFollowUp(submission.challengeId, testResults.passed / testResults.total)
+      : null
+  };
+}
+```
+
+### 11. MentorMatcher (Secondary Feature)
+
+**Responsibility**: Intelligent mentor matching for learning needs
+
+**Interface**:
+
+```typescript
+@Injectable()
+export class MentorMatcher {
+  constructor(
+    private prisma: PrismaService,
+    private skillAnalyzer: SkillAnalyzer,
+    private llm: LLMService
+  ) {}
+  
+  async matchMentor(need: MentorNeed, context: LearningContext): Promise<MentorRecommendation>
+  async prepareMentorSession(sessionId: string): Promise<SessionBrief>
+  async captureLearnings(sessionId: string, notes: string): Promise<LearningCapture>
+}
+```
+
+**Mentor Matching Strategy**:
+
+```typescript
+async matchMentor(need: MentorNeed, context: LearningContext): Promise<MentorRecommendation> {
+  // 1. Analyze the learning need
+  const needAnalysis = await this.analyzeLearningNeed(need, context);
+  
+  // 2. Find mentors with relevant expertise
+  const mentors = await this.prisma.mentor.findMany({
+    where: {
+      available: true,
+      specialization: { hasSome: needAnalysis.requiredExpertise }
+    },
+    include: {
+      user: true,
+      reviews: true,
+      successfulSessions: true
+    }
+  });
+  
+  // 3. Score mentors based on match quality
+  const scored = mentors.map(mentor => {
+    let score = 0;
+    
+    // Expertise match (40%)
+    const expertiseMatch = this.calculateExpertiseMatch(
+      mentor.specialization,
+      needAnalysis.requiredExpertise
+    );
+    score += expertiseMatch * 0.4;
+    
+    // Teaching effectiveness (30%)
+    const effectiveness = mentor.reviews.reduce((sum, r) => sum + r.rating, 0) / mentor.reviews.length;
+    score += (effectiveness / 5) * 0.3;
+    
+    // Experience with similar students (20%)
+    const similarStudents = mentor.successfulSessions.filter(s => 
+      s.studentLevel === context.skillLevel &&
+      s.topics.some(t => needAnalysis.requiredExpertise.includes(t))
+    ).length;
+    score += Math.min(similarStudents / 10, 1) * 0.2;
+    
+    // Availability (10%)
+    const availabilityScore = mentor.availableSlots.length / 20;
+    score += availabilityScore * 0.1;
+    
+    return { mentor, score };
+  });
+  
+  const topMentor = scored.sort((a, b) => b.score - a.score)[0];
+  
+  // 4. Generate session preparation
+  const sessionBrief = await this.generateSessionBrief(topMentor.mentor, need, context);
+  
+  // 5. Suggest pre-session learning
+  const preLearning = await this.suggestPreSessionLearning(need, context);
+  
+  return {
+    mentor: topMentor.mentor,
+    matchScore: topMentor.score,
+    reasoning: this.explainMatch(topMentor.mentor, need, topMentor.score),
+    sessionBrief,
+    preLearning,
+    alternativeMentors: scored.slice(1, 4).map(s => s.mentor)
+  };
+}
+
+async generateSessionBrief(
+  mentor: Mentor, 
+  need: MentorNeed, 
+  context: LearningContext
+): Promise<SessionBrief> {
+  return {
+    studentContext: {
+      name: context.userId,
+      skillLevel: context.skillLevel,
+      currentProject: context.currentProject,
+      recentLearning: context.recentLearning.slice(0, 5),
+      strugglingWith: context.strugglingWith
+    },
+    sessionGoal: need.goal,
+    specificQuestions: need.questions,
+    suggestedTopics: await this.suggestSessionTopics(need, context),
+    preparationMaterials: await this.findPreparationMaterials(need),
+    estimatedDuration: this.estimateSessionDuration(need)
+  };
+}
+```
+
+### 12. AdaptiveLearningModule
+
+**Responsibility**: Personalize learning experience
+
+**Interface**:
+
+```typescript
+@Injectable()
+export class AdaptiveLearningModule {
   constructor(
     private prisma: PrismaService,
     private redis: RedisService
   ) {}
   
-  async recordInteraction(interaction: InteractionRecord): Promise<void>
-  async updatePatterns(userId: string): Promise<void>
-  async getSuggestionsForUser(userId: string, context: UserContext): Promise<Suggestion[]>
-  async getWorkflowSuccessRate(workflowType: string, userId?: string): Promise<number>
-  async identifyAbandonedWorkflows(userId: string): Promise<WorkflowState[]>
+  async personalizeResponse(response: ConciergeResponse, profile: LearningProfile): Promise<ConciergeResponse>
+  async adaptExplanationDepth(explanation: string, interactions: UserInteraction[]): Promise<string>
+  async optimizeLearningTime(userId: string): Promise<OptimalLearningSchedule>
+  async detectLearningPatterns(userId: string): Promise<LearningPattern[]>
 }
 ```
 
-**Pattern Tracking**:
+**Adaptive Personalization**:
 
 ```typescript
-interface InteractionRecord {
-  userId: string;
-  query: string;
-  intent: string;
-  confidence: number;
-  suggestionSelected?: string;
-  workflowCompleted?: boolean;
-  timestamp: Date;
+async personalizeResponse(
+  response: ConciergeResponse, 
+  profile: LearningProfile
+): Promise<ConciergeResponse> {
+  // 1. Adjust explanation depth
+  if (profile.explanationDepth === 'brief') {
+    response.response = await this.summarize(response.response, 0.3);
+  } else if (profile.explanationDepth === 'expert') {
+    response.response = await this.expandWithTechnicalDetails(response.response);
+  }
+  
+  // 2. Adapt to learning style
+  if (profile.preferredStyle === 'visual') {
+    response.visualAids = await this.generateMoreVisuals(response);
+  } else if (profile.preferredStyle === 'hands-on') {
+    response.practiceExercises = await this.generatePracticeExercises(response);
+  }
+  
+  // 3. Adjust pacing
+  if (profile.pace === 'fast') {
+    response.nextSteps = response.nextSteps.slice(0, 3);  // Show fewer, more advanced steps
+  } else if (profile.pace === 'slow') {
+    response.nextSteps = await this.breakDownIntoSmallerSteps(response.nextSteps);
+  }
+  
+  // 4. Add motivational elements based on progress
+  if (profile.needsMotivation) {
+    response.encouragement = await this.generateEncouragement(profile);
+  }
+  
+  return response;
 }
 
-async recordInteraction(interaction: InteractionRecord): Promise<void> {
-  // 1. Store interaction in database
-  await this.prisma.conciergeInteraction.create({
-    data: {
-      userId: interaction.userId,
-      query: interaction.query,
-      intent: interaction.intent,
-      confidence: interaction.confidence,
-      suggestionSelected: interaction.suggestionSelected,
-      workflowCompleted: interaction.workflowCompleted,
-      timestamp: interaction.timestamp
-    }
-  });
-  
-  // 2. Update real-time pattern cache
-  await this.updateRealtimePatterns(interaction);
-  
-  // 3. Queue pattern analysis job (async)
-  await this.queuePatternAnalysis(interaction.userId);
-}
-
-async updatePatterns(userId: string): Promise<void> {
-  // 1. Load recent interactions (last 30 days)
-  const interactions = await this.prisma.conciergeInteraction.findMany({
-    where: {
-      userId,
-      timestamp: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-    },
-    orderBy: { timestamp: 'desc' }
-  });
-  
-  // 2. Analyze intent frequency
-  const intentFrequency = this.calculateIntentFrequency(interactions);
-  
-  // 3. Analyze workflow completion rates
-  const workflowStats = this.calculateWorkflowStats(interactions);
-  
-  // 4. Identify time-based patterns
-  const timePatterns = this.identifyTimePatterns(interactions);
-  
-  // 5. Store patterns
-  await this.prisma.userPattern.upsert({
+async detectLearningPatterns(userId: string): Promise<LearningPattern[]> {
+  // 1. Load interaction history
+  const interactions = await this.prisma.learningActivity.findMany({
     where: { userId },
-    update: {
-      intentFrequency,
-      workflowStats,
-      timePatterns,
-      updatedAt: new Date()
-    },
-    create: {
-      userId,
-      intentFrequency,
-      workflowStats,
-      timePatterns
-    }
+    orderBy: { timestamp: 'desc' },
+    take: 100
   });
+  
+  const patterns: LearningPattern[] = [];
+  
+  // 2. Detect time-of-day patterns
+  const hourlyActivity = this.groupByHour(interactions);
+  const peakHours = this.findPeakHours(hourlyActivity);
+  patterns.push({
+    type: 'optimal_time',
+    description: `Most productive during ${peakHours.join(', ')}`,
+    confidence: 0.8
+  });
+  
+  // 3. Detect learning style patterns
+  const stylePreference = this.detectStylePreference(interactions);
+  patterns.push({
+    type: 'learning_style',
+    description: `Prefers ${stylePreference} learning`,
+    confidence: 0.75
+  });
+  
+  // 4. Detect struggle patterns
+  const struggles = this.detectStruggles(interactions);
+  if (struggles.length > 0) {
+    patterns.push({
+      type: 'struggle_areas',
+      description: `Consistently struggles with ${struggles.join(', ')}`,
+      confidence: 0.85,
+      actionable: true,
+      suggestedIntervention: 'Provide foundational learning for these concepts'
+    });
+  }
+  
+  // 5. Detect completion patterns
+  const completionRate = this.calculateCompletionRate(interactions);
+  if (completionRate < 0.5) {
+    patterns.push({
+      type: 'low_completion',
+      description: 'Often abandons learning sessions',
+      confidence: 0.7,
+      actionable: true,
+      suggestedIntervention: 'Break learning into smaller, more manageable chunks'
+    });
+  }
+  
+  return patterns;
 }
 ```
 
@@ -879,351 +1362,341 @@ async updatePatterns(userId: string): Promise<void> {
 ```prisma
 // Add to existing schema.prisma
 
-model ConciergeInteraction {
-  id                  String   @id @default(uuid())
-  userId              String
-  query               String
-  intent              String
-  confidence          Float
-  suggestionSelected  String?
-  workflowCompleted   Boolean?
-  timestamp           DateTime @default(now())
+model LearningPath {
+  id                String          @id @default(uuid())
+  userId            String
+  goal              String
+  phases            Json            // LearningPhase[]
+  currentPhase      Int             @default(0)
+  progress          Float           @default(0)
+  skillsToAcquire   Json            // Skill[]
+  estimatedDuration String
+  completed         Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
   
-  user                User     @relation(fields: [userId], references: [id])
-  
-  @@index([userId, timestamp])
-  @@index([intent])
-}
-
-model WorkflowState {
-  id          String   @id @default(uuid())
-  userId      String
-  type        String
-  currentStep Int
-  totalSteps  Int
-  stepData    Json
-  completed   Boolean  @default(false)
-  paused      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  user        User     @relation(fields: [userId], references: [id])
+  user              User            @relation(fields: [userId], references: [id])
   
   @@index([userId, completed])
 }
 
-model UserPattern {
-  id               String   @id @default(uuid())
-  userId           String   @unique
-  intentFrequency  Json     // { intent: count }
-  workflowStats    Json     // { workflow: { started, completed, abandoned } }
-  timePatterns     Json     // { hour: activityCount }
-  updatedAt        DateTime @updatedAt
+model LearningActivity {
+  id                String          @id @default(uuid())
+  userId            String
+  type              String          // 'concept_learned', 'challenge_completed', 'code_explained', etc.
+  conceptsLearned   Json            // Concept[]
+  success           Boolean
+  complexity        Int
+  timeSpent         Int             // minutes
+  codeContext       String?
+  notes             String?
+  timestamp         DateTime        @default(now())
   
-  user             User     @relation(fields: [userId], references: [id])
+  user              User            @relation(fields: [userId], references: [id])
+  
+  @@index([userId, timestamp])
+  @@index([type])
+}
+
+model SkillProfile {
+  id                String          @id @default(uuid())
+  userId            String          @unique
+  skills            Json            // SkillLevel[]
+  strengths         Json            // string[]
+  gaps              Json            // SkillGap[]
+  progressOverTime  Json            // ProgressDataPoint[]
+  lastUpdated       DateTime        @updatedAt
+  
+  user              User            @relation(fields: [userId], references: [id])
+}
+
+model Challenge {
+  id                String          @id @default(uuid())
+  topic             String
+  difficulty        String
+  title             String
+  description       String
+  starterCode       String
+  testCases         Json
+  hints             Json
+  learningObjectives Json
+  estimatedTime     String
+  points            Int
+  createdAt         DateTime        @default(now())
+  
+  submissions       ChallengeSubmission[]
+  
+  @@index([topic, difficulty])
+}
+
+model ChallengeSubmission {
+  id                String          @id @default(uuid())
+  challengeId       String
+  userId            String
+  code              String
+  language          String
+  passed            Boolean
+  testResults       Json
+  codeQuality       Float
+  feedback          String
+  timestamp         DateTime        @default(now())
+  
+  challenge         Challenge       @relation(fields: [challengeId], references: [id])
+  user              User            @relation(fields: [userId], references: [id])
+  
+  @@index([userId, challengeId])
+}
+
+model CuratedResource {
+  id                String          @id @default(uuid())
+  title             String
+  url               String
+  type              String          // 'tutorial', 'video', 'documentation', 'article'
+  topics            String[]
+  skillLevel        String
+  rating            Float
+  estimatedTime     String
+  description       String
+  publishedDate     DateTime
+  lastVerified      DateTime
+  
+  @@index([topics])
+  @@index([skillLevel])
+}
+
+model LearningSession {
+  id                String          @id @default(uuid())
+  userId            String
+  pathId            String?
+  topic             String
+  startedAt         DateTime        @default(now())
+  completedAt       DateTime?
+  timeSpent         Int             // minutes
+  conceptsCovered   Json            // Concept[]
+  progress          Float
+  notes             String?
+  
+  user              User            @relation(fields: [userId], references: [id])
+  
+  @@index([userId, startedAt])
+}
+
+model MentorSession {
+  id                String          @id @default(uuid())
+  studentId         String
+  mentorId          String
+  topic             String
+  goal              String
+  sessionBrief      Json
+  scheduledAt       DateTime
+  completedAt       DateTime?
+  learningCapture   Json?           // Key learnings from session
+  studentFeedback   String?
+  mentorFeedback    String?
+  
+  student           User            @relation("StudentSessions", fields: [studentId], references: [id])
+  mentor            Mentor          @relation(fields: [mentorId], references: [id])
+  
+  @@index([studentId, scheduledAt])
+  @@index([mentorId, scheduledAt])
+}
+
+model ConceptDependency {
+  id                String          @id @default(uuid())
+  conceptId         String
+  prerequisiteId    String
+  strength          Float           // How important is this prerequisite (0-1)
+  
+  @@unique([conceptId, prerequisiteId])
+  @@index([conceptId])
+}
+
+model UserLearningPreference {
+  id                String          @id @default(uuid())
+  userId            String          @unique
+  preferredStyle    String          // 'visual', 'hands-on', 'reading', 'mixed'
+  pace              String          // 'slow', 'moderate', 'fast'
+  explanationDepth  String          // 'brief', 'detailed', 'expert'
+  timeCommitment    String
+  optimalLearningTimes Json         // [hour] when user is most productive
+  detectedPatterns  Json            // LearningPattern[]
+  
+  user              User            @relation(fields: [userId], references: [id])
 }
 
 // Extend existing User model
 model User {
   // ... existing fields ...
-  conciergeInteractions ConciergeInteraction[]
-  workflowStates        WorkflowState[]
-  userPattern           UserPattern?
+  learningPaths         LearningPath[]
+  learningActivities    LearningActivity[]
+  skillProfile          SkillProfile?
+  challengeSubmissions  ChallengeSubmission[]
+  learningSessions      LearningSession[]
+  mentorSessions        MentorSession[]       @relation("StudentSessions")
+  learningPreference    UserLearningPreference?
+}
+
+// Extend existing Mentor model
+model Mentor {
+  // ... existing fields ...
+  sessions              MentorSession[]
+  specialization        String[]
+  teachingStyle         String
+  successRate           Float
+  averageRating         Float
 }
 ```
 
 ### Redis Data Structures
 
 ```typescript
-// User context cache
-// Key: context:{userId}
+// Learning context cache
+// Key: learning_context:{userId}
 // TTL: 300 seconds (5 minutes)
-interface CachedUserContext {
+interface CachedLearningContext {
   userId: string;
-  context: UserContext;
+  context: LearningContext;
   cachedAt: number;
 }
 
-// Intent classification cache
-// Key: intent:{hash(query)}
+// Code explanation cache
+// Key: code_explanation:{hash(code)}
 // TTL: 3600 seconds (1 hour)
-interface CachedIntent {
-  query: string;
-  intent: IntentClassification;
+interface CachedCodeExplanation {
+  code: string;
+  language: string;
+  explanation: CodeExplanation;
   cachedAt: number;
 }
 
-// Active workflow state
-// Key: workflow:{workflowId}
+// Concept explanation cache
+// Key: concept:{conceptId}:{skillLevel}
 // TTL: 86400 seconds (24 hours)
-interface CachedWorkflowState {
-  workflowId: string;
-  state: WorkflowState;
-  lastActivity: number;
+interface CachedConceptExplanation {
+  concept: string;
+  skillLevel: string;
+  explanation: string;
+  resources: Resource[];
+  cachedAt: number;
 }
 
-// Real-time pattern tracking
-// Key: patterns:{userId}
-// TTL: 604800 seconds (7 days)
-interface RealtimePatterns {
+// Active learning session
+// Key: learning_session:{sessionId}
+// TTL: 7200 seconds (2 hours)
+interface ActiveLearningSession {
+  sessionId: string;
   userId: string;
-  recentIntents: string[];  // Last 20 intents
-  recentQueries: string[];  // Last 20 queries
-  sessionStart: number;
+  topic: string;
+  startedAt: number;
+  progress: number;
+  conceptsCovered: string[];
+}
+
+// User learning streak
+// Key: learning_streak:{userId}
+// TTL: 604800 seconds (7 days)
+interface LearningStreak {
+  userId: string;
+  currentStreak: number;
+  lastActivity: number;
+  longestStreak: number;
 }
 ```
 
-
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+*Properties focused on learning acceleration and technical assistance*
 
-### Property 1: Intent Classification Completeness
+### Property 1: Learning Path Completeness
 
-*For any* user query (text or voice), the Intent_Analyzer should return a classification with a valid intent type from the supported categories, a confidence score between 0 and 1, and request clarification when confidence is below 0.7.
+*For any* learning goal, the Learning_Path_Engine should generate a path with at least 3 phases, each containing concepts, resources, and practice challenges.
 
-**Validates: Requirements 1.1, 1.2, 1.3**
+**Validates: Requirements 1.1, 1.3**
 
-### Property 2: Entity Extraction Consistency
+### Property 2: Skill Assessment Accuracy
 
-*For any* query containing known entities (mentor names, resource types, project IDs, dates), the Intent_Analyzer should extract all entities that match the expected patterns for the classified intent type.
+*For any* user with learning history, the Skill_Analyzer should identify at least one strength and one gap, with confidence scores between 0 and 1.
 
-**Validates: Requirements 1.6**
+**Validates: Requirements 6.1, 6.2**
 
-### Property 3: Multi-Intent Detection
+### Property 3: Code Explanation Depth
 
-*For any* query containing multiple intent indicators, the Intent_Analyzer should identify both a primary intent and flag all secondary intents present in the query.
+*For any* code snippet, the Code_Explainer should provide a summary, line-by-line explanations, and identify at least one concept used.
 
-**Validates: Requirements 1.5**
+**Validates: Requirements 4.1, 4.2**
 
-### Property 4: Context Retrieval Completeness
+### Property 4: Technical Response Time
 
-*For any* user interaction, the Context_Engine should retrieve a User_Context containing all required fields: userId, role, projects list, pending counts (approvals, reservations, purchases), recent actions, and conversation history.
+*For any* technical question, the Technical_Copilot should respond within 2 seconds with an answer and at least one learning opportunity.
 
-**Validates: Requirements 2.1, 5.2, 5.7, 6.2, 7.2**
+**Validates: Requirements 2.1, 18.1**
 
-### Property 5: Suggestion Generation Bounds
+### Property 5: Resource Relevance
 
-*For any* user context, the Suggestion_Engine should return between 3 and 5 suggestions, each with a relevance score between 0 and 1, ordered by descending relevance score.
+*For any* topic and skill level, the Resource_Curator should return 3-10 resources ranked by relevance score (0-1).
 
-**Validates: Requirements 2.3, 2.7**
+**Validates: Requirements 9.1, 9.2**
 
-### Property 6: Context-Aware Suggestion Prioritization
+### Property 6: Challenge Difficulty Matching
 
-*For any* user context with pending approvals (and role = HOD), the Suggestion_Engine should include at least one approval-related suggestion in the top 3 suggestions.
+*For any* skill level, the Challenge_Generator should create challenges with appropriate difficulty and at least 2 test cases.
 
-**Validates: Requirements 2.4, 7.6**
+**Validates: Requirements 12.1, 12.2**
 
-### Property 7: Resource-Based Suggestions
+### Property 7: Adaptive Personalization
 
-*For any* user context where at least one project has missing resources, the Suggestion_Engine should include a purchase request or alternative resource suggestion.
+*For any* user with learning preferences, the Adaptive_Learning_Module should adjust response depth and style to match preferences.
 
-**Validates: Requirements 2.5**
+**Validates: Requirements 16.1, 16.2**
 
-### Property 8: Inactivity Detection
+### Property 8: Mentor Match Quality
 
-*For any* user context where a project has no activity in the last 7 days, the Suggestion_Engine should include a progress update or mentor consultation suggestion for that project.
+*For any* mentor request, the Mentor_Matcher should return a match with score > 0.5 and provide reasoning for the match.
 
-**Validates: Requirements 2.6**
+**Validates: Requirements 7.1, 7.2**
 
-### Property 9: Suggestion State Consistency
+### Property 9: Progress Tracking Continuity
 
-*For any* workflow state transition (step completion), generating suggestions before and after the transition should produce different suggestion sets that reflect the new state.
+*For any* learning activity, the Progress_Tracker should update skill profile and maintain learning streak without data loss.
 
-**Validates: Requirements 2.8**
+**Validates: Requirements 10.1, 10.2**
 
-### Property 10: Workflow State Progression
+### Property 10: Context Awareness
 
-*For any* workflow, when a step is successfully completed, the workflow state should advance to the next step (currentStep increments by 1), update stepData with the step results, and correctly indicate completion status when reaching the final step.
+*For any* query with code context, the Context_Engine should incorporate current project and recent learning into the response.
 
-**Validates: Requirements 3.2, 3.3, 3.8**
+**Validates: Requirements 3.1, 3.2**
 
-### Property 11: Workflow Input Validation
-
-*For any* workflow step requiring input, providing invalid data should result in validation failure with a specific error message, and the workflow state should remain unchanged (currentStep does not increment).
-
-**Validates: Requirements 3.4**
-
-### Property 12: Workflow Error Recovery
-
-*For any* workflow step that fails during execution, the system should return an error state with error details and recovery options, while preserving all previously completed step data.
-
-**Validates: Requirements 3.5, 12.5**
-
-### Property 13: Workflow Persistence
-
-*For any* workflow that is paused, the workflow state should be persisted to the database, and resuming the workflow should restore the exact state including currentStep, stepData, and all metadata.
-
-**Validates: Requirements 3.6, 3.7**
-
-### Property 14: Mentor Search Filtering
-
-*For any* mentor search query with expertise or name criteria, all returned mentors should match the search criteria and have available=true status.
-
-**Validates: Requirements 4.8**
-
-### Property 15: Mentor Availability Validation
-
-*For any* mentor booking attempt, if the selected mentor is unavailable (available=false), the system should reject the booking and suggest alternative mentors or time slots.
-
-**Validates: Requirements 4.4, 4.7**
-
-### Property 16: Project Status Filtering
-
-*For any* project list request with a status filter (active, pending, approved, completed), all returned projects should have a status matching the filter criteria.
-
-**Validates: Requirements 5.6**
-
-### Property 17: Resource Filtering Accuracy
-
-*For any* resource discovery query with specified requirements (item type, minimum quantity), all returned resources should match the item type and have quantity >= requested quantity.
-
-**Validates: Requirements 6.3**
-
-### Property 18: Alternative Resource Suggestions
-
-*For any* resource request where the exact item is unavailable (quantity = 0 or item not found), the system should return at least one alternative resource suggestion with similar characteristics.
-
-**Validates: Requirements 6.4**
-
-### Property 19: Approval Timeline Estimation
-
-*For any* pending approval, the system should provide an estimated timeline based on historical data, and the estimate should be a positive number of days.
-
-**Validates: Requirements 7.3, 5.3**
-
-### Property 20: Cross-Platform State Consistency
-
-*For any* user session, starting a workflow on one platform (web) and continuing on another platform (kiosk) should maintain identical workflow state including currentStep, stepData, and completion status.
-
-**Validates: Requirements 8.1, 8.4**
-
-### Property 21: Voice Transcription Display
-
-*For any* voice input processed by the system, the response should include the transcription text for user confirmation before processing the intent.
-
-**Validates: Requirements 8.7**
-
-### Property 22: Interaction Recording Completeness
-
-*For any* user interaction with the Smart_Concierge, the Learning_Module should record an interaction entry containing userId, query, intent, confidence, and timestamp.
-
-**Validates: Requirements 9.1**
-
-### Property 23: Pattern Persistence
-
-*For any* user with recorded interactions, the User_Patterns should persist across sessions, and retrieving patterns after a session restart should return the same pattern data.
-
-**Validates: Requirements 9.2**
-
-### Property 24: Pattern-Influenced Suggestions
-
-*For any* user with established patterns (frequent intents), generating suggestions should weight recommendations toward the user's frequent intent categories more heavily than for users without patterns.
-
-**Validates: Requirements 9.3**
-
-### Property 25: Workflow Abandonment Detection
-
-*For any* workflow that remains incomplete for more than 24 hours, the Learning_Module should flag it as abandoned and include it in the abandonment patterns.
-
-**Validates: Requirements 9.6**
-
-### Property 26: Privacy-Preserving Pattern Storage
-
-*For any* User_Pattern record, the stored data should not contain personally identifiable information (PII) such as email addresses, full names, or specific project titles in the pattern fields.
-
-**Validates: Requirements 9.7**
-
-### Property 27: Async Pattern Updates
-
-*For any* interaction that triggers pattern updates, the user request should complete and return a response before the pattern update completes, demonstrating non-blocking behavior.
-
-**Validates: Requirements 9.8, 11.6**
-
-### Property 28: Backward Compatibility
-
-*For any* existing agent endpoint (/recommend, /chat, /answer), calling the endpoint with valid parameters should return a successful response with the expected schema, unchanged from pre-Smart-Concierge behavior.
-
-**Validates: Requirements 10.8**
-
-### Property 29: Response Time Performance
-
-*For any* query to the Smart_Concierge, 95% of requests should receive an intent classification within 2 seconds and suggestions within 1 second (measured over 100 requests).
-
-**Validates: Requirements 11.1, 11.2**
-
-### Property 30: Cache Effectiveness
-
-*For any* repeated request for the same user context or intent classification within the cache TTL period, the second request should be served from cache (faster response time and no database query).
-
-**Validates: Requirements 11.4**
-
-### Property 31: Rate Limiting Enforcement
-
-*For any* user making more than 60 requests in a 60-second window, the 61st request should be rejected with a 429 status code and rate limit error message.
-
-**Validates: Requirements 11.5**
-
-### Property 32: Circuit Breaker Activation
-
-*For any* external service (voice-agent, AI provider) that fails 5 consecutive times, the circuit breaker should open and subsequent requests should use fallback behavior without attempting to call the failing service.
-
-**Validates: Requirements 11.8**
-
-### Property 33: Graceful Degradation
-
-*For any* scenario where the AI provider is unavailable, the system should still process queries using rule-based intent detection and return responses with clear indication of degraded mode.
-
-**Validates: Requirements 12.1, 12.2, 12.3**
-
-### Property 34: Error Logging Completeness
-
-*For any* error that occurs during request processing, an error log entry should be created containing timestamp, error type, error message, user context, and stack trace.
-
-**Validates: Requirements 12.4**
-
-### Property 35: Input Validation Specificity
-
-*For any* invalid user input (malformed data, missing required fields, out-of-range values), the system should reject the input and return a specific error message indicating which field is invalid and why.
-
-**Validates: Requirements 12.6**
-
-### Property 36: Operation Timeout Enforcement
-
-*For any* operation that exceeds 30 seconds, the system should terminate the operation and return a timeout error with information about the operation that timed out.
-
-**Validates: Requirements 12.7**
-
-### Property 37: Voice Recognition Fallback
-
-*For any* voice input that fails transcription (empty result or error from voice-agent), the system should prompt the user to retry voice input or switch to text input mode.
-
-**Validates: Requirements 12.8**
 
 ## Error Handling
 
 ### Error Categories
 
-1. **Intent Classification Errors**
-   - Low confidence (< 0.7): Request clarification
-   - Unknown intent: Provide help menu with available actions
-   - Entity extraction failure: Ask for specific missing information
+1. **Learning Path Generation Errors**
+   - Unclear goal: Request clarification with examples
+   - Insufficient skill data: Offer skill assessment
+   - No resources found: Suggest alternative topics or broader search
 
-2. **Workflow Errors**
-   - Invalid input: Show validation error and retry prompt
-   - Step execution failure: Preserve state, show error, offer recovery options
-   - Workflow not found: Clear stale workflow references, start fresh
+2. **Code Explanation Errors**
+   - Invalid code syntax: Identify syntax errors and explain fixes
+   - Unsupported language: List supported languages
+   - Code too complex: Break down into smaller chunks
 
-3. **External Service Errors**
-   - Voice-agent unavailable: Fall back to text input
-   - AI provider unavailable: Use rule-based responses
-   - Database unavailable: Return cached data if available, otherwise error
-   - API timeout: Retry with exponential backoff (max 3 attempts)
+3. **Technical Copilot Errors**
+   - Ambiguous question: Ask clarifying questions
+   - Topic outside knowledge base: Acknowledge limitation, suggest resources
+   - Low confidence answer: Provide multiple perspectives, cite sources
 
-4. **Data Errors**
-   - Missing user context: Load minimal context, request user to complete profile
-   - Invalid project ID: Return error with list of valid projects
-   - Resource not found: Suggest similar resources or search
+4. **Challenge Errors**
+   - Test execution failure: Provide detailed error messages
+   - Timeout: Suggest optimization approaches
+   - Incorrect submission: Provide hints, not full solution
+
+5. **External Service Errors**
+   - AI provider unavailable: Fall back to cached explanations and rule-based responses
+   - Voice-agent unavailable: Switch to text mode
+   - Database unavailable: Use cached data, queue writes
+   - API timeout: Retry with exponential backoff
 
 ### Error Response Format
 
@@ -1232,43 +1705,11 @@ interface ErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: any;
-    recoveryOptions?: RecoveryOption[];
+    learningOpportunity?: string;  // Turn errors into learning moments
+    suggestedActions?: string[];
+    resources?: Resource[];
   };
   fallbackResponse?: string;
-}
-
-interface RecoveryOption {
-  action: string;
-  label: string;
-  description: string;
-}
-```
-
-### Circuit Breaker Configuration
-
-```typescript
-interface CircuitBreakerConfig {
-  failureThreshold: 5;        // Open after 5 failures
-  successThreshold: 2;        // Close after 2 successes
-  timeout: 30000;             // 30 second timeout
-  resetTimeout: 60000;        // Try again after 1 minute
-}
-```
-
-### Retry Strategy
-
-```typescript
-interface RetryConfig {
-  maxAttempts: 3;
-  initialDelay: 1000;         // 1 second
-  maxDelay: 10000;            // 10 seconds
-  backoffMultiplier: 2;       // Exponential backoff
-  retryableErrors: [
-    'TIMEOUT',
-    'SERVICE_UNAVAILABLE',
-    'NETWORK_ERROR'
-  ];
 }
 ```
 
@@ -1276,191 +1717,260 @@ interface RetryConfig {
 
 ### Dual Testing Approach
 
-The Smart Concierge feature requires both unit tests and property-based tests for comprehensive coverage:
-
 **Unit Tests** focus on:
-- Specific workflow examples (booking a mentor with known data)
-- Integration points (voice-agent STT, existing agent service)
-- Edge cases (empty results, boundary conditions)
-- Error conditions (service failures, invalid inputs)
+- Learning path generation with various goals
+- Code explanation accuracy
+- Skill assessment logic
+- Resource ranking algorithms
+- Challenge generation and evaluation
 
 **Property-Based Tests** focus on:
-- Universal properties across all inputs (intent classification bounds, suggestion counts)
-- State consistency (workflow progression, context updates)
-- Performance characteristics (response times, cache effectiveness)
-- Data integrity (pattern persistence, error logging)
+- Learning path completeness (Property 1)
+- Skill assessment accuracy (Property 2)
+- Code explanation depth (Property 3)
+- Response time performance (Property 4)
+- Resource relevance (Property 5)
 
 ### Property-Based Testing Configuration
 
 **Framework**: Use `fast-check` for TypeScript property-based testing
-
-**Configuration**:
-- Minimum 100 iterations per property test
-- Each test tagged with feature name and property number
-- Tag format: `Feature: smart-concierge, Property {N}: {property_text}`
 
 **Example Property Test**:
 
 ```typescript
 import fc from 'fast-check';
 
-describe('Smart Concierge Properties', () => {
-  // Feature: smart-concierge, Property 1: Intent Classification Completeness
-  it('should return valid intent classification for any query', async () => {
+describe('Smart Concierge Learning Properties', () => {
+  // Feature: learning-acceleration, Property 1: Learning Path Completeness
+  it('should generate complete learning paths for any goal', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.string({ minLength: 1, maxLength: 500 }),
-        fc.uuid(),
-        async (query, userId) => {
-          const result = await conciergeService.processQuery({
-            query,
+        fc.string({ minLength: 10, maxLength: 200 }),  // Learning goal
+        fc.uuid(),  // User ID
+        fc.constantFrom('beginner', 'intermediate', 'advanced'),  // Skill level
+        async (goal, userId, skillLevel) => {
+          const path = await learningPathEngine.generatePath(goal, {
             userId,
-            platform: 'web',
-            inputMode: 'text'
+            skillLevel,
+            learningProfile: { preferredStyle: 'mixed', pace: 'moderate' }
           });
           
-          // Verify intent is from supported categories
-          expect(SUPPORTED_INTENTS).toContain(result.intent.type);
+          // Verify path has at least 3 phases
+          expect(path.phases.length).toBeGreaterThanOrEqual(3);
           
-          // Verify confidence score is in valid range
-          expect(result.intent.confidence).toBeGreaterThanOrEqual(0);
-          expect(result.intent.confidence).toBeLessThanOrEqual(1);
+          // Verify each phase has required components
+          path.phases.forEach(phase => {
+            expect(phase.concepts.length).toBeGreaterThan(0);
+            expect(phase.resources.length).toBeGreaterThan(0);
+            expect(phase.challenges.length).toBeGreaterThan(0);
+            expect(phase.estimatedTime).toBeDefined();
+          });
           
-          // Verify clarification logic
-          if (result.intent.confidence < 0.7) {
-            expect(result.intent.needsClarification).toBe(true);
-            expect(result.intent.clarificationPrompt).toBeDefined();
-          }
+          // Verify skills to acquire are identified
+          expect(path.skillsToAcquire.length).toBeGreaterThan(0);
         }
       ),
       { numRuns: 100 }
     );
   });
   
-  // Feature: smart-concierge, Property 5: Suggestion Generation Bounds
-  it('should return 3-5 suggestions with valid relevance scores', async () => {
+  // Feature: technical-copilot, Property 3: Code Explanation Depth
+  it('should provide comprehensive code explanations', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.string({ minLength: 50, maxLength: 500 }),  // Code
+        fc.constantFrom('javascript', 'python', 'java', 'typescript'),
+        async (code, language) => {
+          const explanation = await codeExplainer.explainCode(code, language, {
+            userId: 'test-user',
+            skillLevel: 'intermediate'
+          });
+          
+          // Verify summary exists
+          expect(explanation.summary).toBeDefined();
+          expect(explanation.summary.length).toBeGreaterThan(20);
+          
+          // Verify line-by-line explanations
+          expect(explanation.lineByLine.length).toBeGreaterThan(0);
+          
+          // Verify concepts identified
+          expect(explanation.keyConceptsUsed.length).toBeGreaterThan(0);
+          
+          // Verify learning opportunities
+          expect(explanation.learningOpportunities).toBeDefined();
+        }
+      ),
+      { numRuns: 50 }
+    );
+  });
+  
+  // Feature: skill-assessment, Property 2: Skill Assessment Accuracy
+  it('should accurately assess skills with confidence scores', async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.uuid(),
-        fc.record({
-          projects: fc.array(fc.record({
-            id: fc.uuid(),
-            title: fc.string(),
-            status: fc.constantFrom('active', 'pending', 'approved'),
-            missingResources: fc.nat(10),
-            pendingTasks: fc.nat(20)
-          })),
-          pendingApprovals: fc.nat(10),
-          role: fc.constantFrom('student', 'hod', 'admin')
-        }),
-        async (userId, contextData) => {
-          const context = await contextEngine.getUserContext(userId);
-          const suggestions = await suggestionEngine.generateSuggestions(context);
+        async (userId) => {
+          // Create some learning history
+          await createTestLearningHistory(userId, 10);
           
-          // Verify count bounds
-          expect(suggestions.length).toBeGreaterThanOrEqual(3);
-          expect(suggestions.length).toBeLessThanOrEqual(5);
+          const profile = await skillAnalyzer.assessSkills(userId);
           
-          // Verify relevance scores
-          suggestions.forEach(suggestion => {
-            expect(suggestion.relevanceScore).toBeGreaterThanOrEqual(0);
-            expect(suggestion.relevanceScore).toBeLessThanOrEqual(1);
+          // Verify at least one strength identified
+          expect(profile.strengths.length).toBeGreaterThan(0);
+          
+          // Verify at least one gap identified
+          expect(profile.gaps.length).toBeGreaterThan(0);
+          
+          // Verify all skills have valid confidence scores
+          profile.skills.forEach(skill => {
+            expect(skill.confidence).toBeGreaterThanOrEqual(0);
+            expect(skill.confidence).toBeLessThanOrEqual(1);
           });
           
-          // Verify ordering
-          for (let i = 1; i < suggestions.length; i++) {
-            expect(suggestions[i-1].relevanceScore)
-              .toBeGreaterThanOrEqual(suggestions[i].relevanceScore);
-          }
+          // Verify skill levels are valid
+          const validLevels = ['novice', 'beginner', 'intermediate', 'advanced', 'expert'];
+          profile.skills.forEach(skill => {
+            expect(validLevels).toContain(skill.level);
+          });
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 50 }
     );
-  });
-});
-```
-
-### Unit Test Examples
-
-```typescript
-describe('MentorBookingWorkflow', () => {
-  it('should retrieve available mentors when workflow starts', async () => {
-    const workflow = await workflowOrchestrator.startWorkflow(
-      'book_mentor',
-      'user-123',
-      { expertise: 'IoT' }
-    );
-    
-    expect(workflow.stepData.availableMentors).toBeDefined();
-    expect(workflow.stepData.availableMentors.length).toBeGreaterThan(0);
-    expect(workflow.stepData.availableMentors[0]).toHaveProperty('specialization');
-  });
-  
-  it('should reject booking for unavailable mentor', async () => {
-    const mentor = await createTestMentor({ available: false });
-    
-    const result = await mentorWorkflow.execute(
-      { currentStep: 1, stepData: { selectedMentor: mentor } },
-      { confirm: true }
-    );
-    
-    expect(result.error).toBeDefined();
-    expect(result.error).toContain('unavailable');
-  });
-});
-
-describe('Voice Integration', () => {
-  it('should forward voice input to voice-agent service', async () => {
-    const voiceData = createTestAudioBlob();
-    
-    const result = await conciergeController.processVoiceQuery({
-      audio: voiceData,
-      userId: 'user-123',
-      platform: 'kiosk',
-      inputMode: 'voice'
-    });
-    
-    expect(voiceAgentService.transcribe).toHaveBeenCalledWith(voiceData);
-    expect(result.intent.transcription).toBeDefined();
   });
 });
 ```
 
 ### Integration Test Strategy
 
-1. **End-to-End Workflow Tests**: Test complete workflows from start to finish
-2. **Cross-Platform Tests**: Verify state consistency between web and kiosk
-3. **Service Integration Tests**: Test integration with voice-agent, existing agent service, RAG
+1. **End-to-End Learning Flows**: Test complete learning journeys from goal to completion
+2. **Cross-Platform Learning**: Verify learning state consistency between web and kiosk
+3. **AI Service Integration**: Test integration with LLM, RAG, voice-agent
 4. **Performance Tests**: Measure response times under realistic load
-5. **Resilience Tests**: Verify graceful degradation when services fail
+5. **Resilience Tests**: Verify graceful degradation when AI services fail
 
-### Test Data Generation
+## Implementation Phases
 
-Use factories for consistent test data:
+### Phase 1: Core Learning Infrastructure (Week 1-2)
+- ConciergeController with learning endpoints
+- LearningPathEngine basic implementation
+- SkillAnalyzer foundation
+- Database schema and migrations
+- Basic ContextEngine
 
-```typescript
-const userContextFactory = {
-  create: (overrides?: Partial<UserContext>): UserContext => ({
-    userId: faker.string.uuid(),
-    role: faker.helpers.arrayElement(['student', 'hod', 'admin']),
-    projects: [],
-    pendingApprovals: 0,
-    pendingReservations: 0,
-    pendingPurchases: 0,
-    recentActions: [],
-    conversationHistory: [],
-    activeWorkflows: [],
-    frequentIntents: [],
-    preferredWorkflows: [],
-    interactionPatterns: [],
-    ...overrides
-  })
-};
-```
+### Phase 2: Technical Copilot (Week 3-4)
+- TechnicalCopilot service
+- CodeExplainer with line-by-line analysis
+- DebugAssistant
+- ProjectGuide
+- Integration with existing LLM service
 
-### Coverage Goals
+### Phase 3: Learning Intelligence (Week 5-6)
+- ResourceCurator with ranking
+- ConceptMapper and knowledge graph
+- ChallengeGenerator
+- ProgressTracker
+- AdaptiveLearningModule
 
-- Unit test coverage: > 80%
-- Property test coverage: All 37 correctness properties
-- Integration test coverage: All workflow types and external integrations
-- E2E test coverage: Critical user journeys (mentor booking, submission tracking)
+### Phase 4: Integration & Polish (Week 7-8)
+- Voice learning integration
+- MentorMatcher (secondary feature)
+- Cross-platform state sync
+- Performance optimization
+- Comprehensive testing
+
+## Success Metrics
+
+### Learning Acceleration Metrics
+- **Time to Competency**: 40% reduction in time to reach intermediate skill level
+- **Concept Retention**: 80%+ retention rate after 1 week
+- **Learning Path Completion**: 70%+ completion rate
+- **Skill Development**: Average 5+ new skills per month
+
+### Technical Productivity Metrics
+- **Problem Resolution Time**: 60% faster with copilot assistance
+- **Code Quality**: 30% improvement in code quality scores
+- **Debugging Efficiency**: 50% reduction in debugging time
+- **Project Completion**: 25% faster project completion
+
+### Engagement Metrics
+- **Daily Active Users**: 60%+ of registered users
+- **Session Duration**: Average 30+ minutes per session
+- **Learning Streak**: 50%+ users maintain 7-day streak
+- **Challenge Completion**: 80%+ challenge completion rate
+
+### System Performance Metrics
+- **Response Time**: < 2 sec for 95% of queries
+- **Code Explanation**: < 3 sec for 95% of requests
+- **Learning Path Generation**: < 5 sec
+- **System Uptime**: > 99.5%
+
+## Competitive Advantages
+
+### vs Traditional Learning Platforms
+- **Contextual**: Learns in context of actual projects, not isolated tutorials
+- **Personalized**: Adapts to individual learning style and pace
+- **Just-in-Time**: Provides knowledge exactly when needed
+- **Integrated**: Seamlessly integrated into development workflow
+
+### vs Code Assistants (GitHub Copilot, etc.)
+- **Educational Focus**: Explains why, not just what
+- **Skill Development**: Tracks and develops skills over time
+- **Learning Paths**: Provides structured learning, not just code completion
+- **Adaptive**: Adjusts to learner's level and progress
+
+### vs Campus Management Systems
+- **Learning-First**: Prioritizes learning acceleration over administration
+- **AI-Powered**: Uses advanced AI for personalization and assistance
+- **Project-Based**: Emphasizes learning by building
+- **Continuous**: Supports learning throughout the development journey
+
+## Future Enhancements
+
+### Phase 2 Features
+- **Collaborative Learning**: Pair programming sessions, study groups
+- **Advanced Visualizations**: Interactive concept maps, skill trees
+- **Mobile Learning**: Native mobile apps for on-the-go learning
+- **Gamification**: Achievements, leaderboards, learning competitions
+
+### Phase 3 Features
+- **AI Tutor**: Dedicated AI tutor for each student
+- **Live Coding Sessions**: Real-time collaborative coding with AI guidance
+- **Career Pathways**: Map learning to career goals and job requirements
+- **Industry Integration**: Connect with industry mentors and real-world projects
+
+### Phase 4 Features
+- **Multi-Language Support**: Support for regional languages
+- **Accessibility**: Enhanced accessibility features for diverse learners
+- **VR/AR Learning**: Immersive learning experiences
+- **Blockchain Credentials**: Verifiable skill credentials on blockchain
+
+## Deployment Strategy
+
+### Rollout Plan
+1. **Alpha** (Week 9): Internal testing with 10 power users
+2. **Beta** (Week 10-11): 50 early adopters, focus on learning features
+3. **Soft Launch** (Week 12): 200 users, one department
+4. **Full Launch** (Week 13+): All users, phased by department
+
+### Monitoring
+- Real-time learning analytics dashboard
+- Error tracking and alerting (Sentry)
+- Performance monitoring (New Relic)
+- User feedback collection
+- A/B testing for learning approaches
+
+## Conclusion
+
+The Smart Concierge transforms campus resource management into a learning acceleration platform. By prioritizing learning over administration, providing real-time technical assistance, and adapting to individual needs, it directly addresses the hackathon's core problem: helping people learn faster, work smarter, and become more productive while building and understanding technology.
+
+The system leverages existing infrastructure while adding powerful new learning-focused components. It's practical, scalable, and measurable—with clear success metrics tied to learning outcomes and productivity gains.
+
+**Key Differentiators:**
+- Learning-first architecture with technical copilot
+- Personalized learning paths based on project goals
+- Real-time code explanation and debugging assistance
+- Adaptive intelligence that improves with use
+- Seamless integration into development workflow
+- Project-based learning with hands-on guidance
+
+This is not just a campus management system—it's an AI-powered learning companion that accelerates skill development and project success.
